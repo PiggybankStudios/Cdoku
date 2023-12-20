@@ -28,15 +28,15 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		Assert(game->notesSheet.isValid);
 		
 		InitBoard(&game->board, NewStr(
-			"1        "
-			" 2     6 "
-			"  3      "
-			"         "
-			"    5    "
-			"         "
-			"      7  "
-			" 4     8 "
-			"        9"
+			" 87 3  4 "
+			"    89 3 "
+			"  9  2  1"
+			"1  8     "
+			"   6  7  "
+			" 7  9 1 6"
+			"4   6    "
+			"     39  "
+			"83  4    "
 		));
 		InitCursor(&game->cursor, NewVec2i(4, 4), &game->board);
 		game->initialized = true;
