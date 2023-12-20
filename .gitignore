@@ -4,3 +4,6 @@ build/*
 lib/include/
 ~lib/include/README.md
 engine/
+data/Resources/Raw
+data/pdex.elf
+data/pdex.dll

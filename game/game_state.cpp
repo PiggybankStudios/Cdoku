@@ -8,6 +8,9 @@ Description:
 
 GameState_t* game = nullptr;
 
+#include "game_board.cpp"
+#include "game_cursor.cpp"
+
 // +--------------------------------------------------------------+
 // |                            Start                             |
 // +--------------------------------------------------------------+
@@ -15,7 +18,27 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 {
 	if (initialize)
 	{
+		game->backgroundTexture = LoadTexture(NewStr("Resources/Textures/background"));
+		Assert(game->backgroundTexture.isValid);
 		
+		game->numbersSheet = LoadSpriteSheet(NewStr("Resources/Sheets/numbers_large"), 3);
+		Assert(game->numbersSheet.isValid);
+		
+		game->notesSheet = LoadSpriteSheet(NewStr("Resources/Sheets/numbers_small"), 3);
+		Assert(game->notesSheet.isValid);
+		
+		InitBoard(&game->board, NewStr(
+			"1        "
+			" 2     6 "
+			"  3      "
+			"         "
+			"    5    "
+			"         "
+			"      7  "
+			" 4     8 "
+			"        9"
+		));
+		InitCursor(&game->cursor, NewVec2i(4, 4), &game->board);
 		game->initialized = true;
 	}
 }
@@ -37,7 +60,7 @@ void StopAppState_Game(bool deinitialize, AppState_t nextState)
 // +--------------------------------------------------------------+
 void GameUiLayout()
 {
-	
+	BoardLayoutUi(&game->board, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
 }
 
 // +--------------------------------------------------------------+
@@ -47,7 +70,7 @@ void UpdateAppState_Game()
 {
 	MemArena_t* scratch = GetScratchArena();
 	
-	
+	UpdateCursor(&game->cursor, &game->board);
 	
 	FreeScratchArena(scratch);
 }
@@ -63,7 +86,9 @@ void RenderAppState_Game(bool isOnTop)
 	pd->graphics->clear(kColorWhite);
 	PdSetDrawMode(kDrawModeCopy);
 	
-	
+	PdDrawTexturedRec(game->backgroundTexture.bitmap, game->backgroundTexture.size, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
+	RenderBoard(&game->board, &game->cursor);
+	RenderCursor(&game->cursor, &game->board);
 	
 	// +==============================+
 	// |         Debug Render         |
