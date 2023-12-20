@@ -14,6 +14,7 @@ GameGlobals_t* gl = nullptr;
 // +--------------------------------------------------------------+
 // |                         Source Files                         |
 // +--------------------------------------------------------------+
+#include "game_helpers.cpp"
 #include "main_menu.cpp"
 #include "game_state.cpp"
 

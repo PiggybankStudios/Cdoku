@@ -16,6 +16,8 @@ Date:   12\19\2023
 struct GameGlobals_t
 {
 	bool initialized;
+	
+	MyStr_t currentLevel;
 };
 
 #endif //  _GAME_MAIN_H

@@ -14,9 +14,13 @@ struct GameState_t
 {
 	bool initialized;
 	
+	PDMenuItem* mainMenuItem;
+	bool mainMenuRequested;
+	
 	SpriteSheet_t numbersSheet;
 	SpriteSheet_t notesSheet;
 	Texture_t backgroundTexture;
+	Texture_t ditherTexture;
 	
 	Board_t board;
 	Cursor_t cursor;

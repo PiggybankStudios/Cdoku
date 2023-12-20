@@ -122,6 +122,7 @@ void UpdateAppState_MainMenu()
 				// +==============================+
 				case MMenuAction_Play:
 				{
+					SetCurrentLevel(NewStr("Resources/Text/puzzle1.txt")); //TODO: Make this a player choice!
 					PushAppState(AppState_Game);
 				} break;
 				

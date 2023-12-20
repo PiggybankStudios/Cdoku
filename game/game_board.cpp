@@ -23,26 +23,72 @@ void InitBoard(Board_t* board, MyStr_t initialState)
 	NotNull(board);
 	ClearPointer(board);
 	
-	if (initialState.length == BOARD_WIDTH * BOARD_HEIGHT)
+	u64 cIndex = 0;
+	for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
 	{
-		u64 cIndex = 0;
-		for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
+		for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
 		{
-			for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
+			while (cIndex < initialState.length && (initialState.chars[cIndex] == '\r' || initialState.chars[cIndex] == '\n')) { cIndex++; }
+			char c = (cIndex < initialState.length ? initialState.chars[cIndex] : ' ');
+			
+			v2i gridPos = NewVec2i(xPos, yPos);
+			Cell_t* cell = GetCell(board, gridPos);
+			cell->gridPos = gridPos;
+			if (c >= '0' && c <= '9')
 			{
-				v2i gridPos = NewVec2i(xPos, yPos);
-				Cell_t* cell = GetCell(board, gridPos);
-				char c = initialState.chars[cIndex];
-				if (c >= '0' && c <= '9')
-				{
-					cell->value = (u8)(c - '0');
-					FlagSet(cell->flags, CellFlag_IsGiven);
-				}
-				cIndex++;
+				cell->value = (u8)(c - '0');
+				FlagSet(cell->flags, CellFlag_IsGiven);
 			}
+			cIndex++;
 		}
 	}
-	else { Assert(initialState.length == 0); }
+}
+
+void LoadSaveInfo(Board_t* board, MyStr_t saveInfo)
+{
+	u64 cIndex = 0;
+	for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
+	{
+		for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
+		{
+			v2i gridPos = NewVec2i(xPos, yPos);
+			Cell_t* cell = GetCell(board, gridPos);
+			char c = (cIndex < saveInfo.length ? saveInfo.chars[cIndex] : ' ');
+			
+			if (c >= '1' && c <= '9' && !IsFlagSet(cell->flags, CellFlag_IsGiven))
+			{
+				cell->value = (u8)(c - '0');
+			}
+			
+			if (c != '\n' && c != '\r' && cIndex < saveInfo.length) { cIndex++; }
+		}
+	}
+	
+	if (cIndex < saveInfo.length && saveInfo.chars[cIndex] == '\r') { cIndex++; }
+	if (cIndex < saveInfo.length && saveInfo.chars[cIndex] == '\n') { cIndex++; }
+	
+	for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
+	{
+		for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
+		{
+			v2i gridPos = NewVec2i(xPos, yPos);
+			Cell_t* cell = GetCell(board, gridPos);
+			cell->notes = 0x0000;
+			
+			for (i32 noteIndex = 0; noteIndex < 9; noteIndex++)
+			{
+				char c = (cIndex < saveInfo.length ? saveInfo.chars[cIndex] : ' ');
+				if (c == '1' + noteIndex)
+				{
+					FlagSet(cell->notes, (1 << noteIndex));
+				}
+				if (c != '\n' && c != '\r' && cIndex < saveInfo.length) { cIndex++; }
+			}
+			
+			if (cIndex < saveInfo.length && saveInfo.chars[cIndex] == '\r') { cIndex++; }
+			if (cIndex < saveInfo.length && saveInfo.chars[cIndex] == '\n') { cIndex++; }
+		}
+	}
 }
 
 void BoardLayoutUi(Board_t* board, reci availableRec)
@@ -76,6 +122,8 @@ void BoardLayoutUi(Board_t* board, reci availableRec)
 			);
 			if ((xPos % 3) == 2 && xPos < BOARD_WIDTH-1)  { cell->innerRec.width  -= ((GROUP_DIVIDER_THICKNESS+1) / 2); }
 			if ((yPos % 3) == 2 && yPos < BOARD_HEIGHT-1) { cell->innerRec.height -= ((GROUP_DIVIDER_THICKNESS+1) / 2); }
+			if (xPos == BOARD_WIDTH-1)  { cell->innerRec.width  += 1; }
+			if (yPos == BOARD_HEIGHT-1) { cell->innerRec.height += 1; }
 		}
 	}
 }
@@ -84,6 +132,8 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 {
 	PdDrawRec(board->mainRec, kColorWhite);
 	PdDrawRecOutline(board->mainRec, BOARD_OUTLINE_THICKNESS, true, kColorBlack);
+	Cell_t* selectedCell = GetCell(board, cursor->gridPos);
+	NotNull(selectedCell);
 	
 	// +==============================+
 	// | Render Cell Divider Columns  |
@@ -128,9 +178,16 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 		{
 			v2i gridPos = NewVec2i(xPos, yPos);
 			Cell_t* cell = GetCell(board, gridPos);
+			
 			if (cell->value > 0)
 			{
 				Assert(cell->value <= 9);
+				
+				if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
+				{
+					PdDrawTexturedRecPart(game->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+				}
+				
 				reci numberRec = NewReci(
 					cell->mainRec.x + cell->mainRec.width/2 - game->numbersSheet.frameSize.width/2,
 					cell->mainRec.y + cell->mainRec.height/2 - game->numbersSheet.frameSize.height/2,
