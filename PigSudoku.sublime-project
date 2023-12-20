@@ -1,0 +1,86 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+			"folder_exclude_patterns": [
+				"engine",
+				"lib",
+			],
+		},
+		{
+			"name": "PigEngine",
+			"path": "engine/platform/playdate",
+		},
+		{
+			"name": "GyLib",
+			"path": "lib/include/gylib",
+		},
+	],
+	"settings":
+	{
+		"build_options":
+		[
+		],
+		"custom_constants":
+		[
+			"AppState_Game",
+			"AppState_MainMenu",
+			"AppState_None",
+			"AppState_NumStates",
+			"FIRST_APP_STATE",
+			"GAME_VERSION_BUILD",
+			"GAME_VERSION_MAJOR",
+			"GAME_VERSION_MINOR",
+			"MAIN_FONT_PATH",
+			"MMENU_BTN_FONT_PATH",
+			"MMENU_BTN_HORIZONTAL_PADDING",
+			"MMENU_BTN_SPACING",
+			"MMENU_BTN_VERTICAL_PADDING",
+			"MMENU_TITLE_FONT_PATH",
+			"MMenuAction_Exit",
+			"MMenuAction_None",
+			"MMenuAction_NumActions",
+			"MMenuAction_Play",
+			"MMenuAction_Settings",
+		],
+		"custom_functions":
+		[
+			"AppState_t InitGame()",
+			"MMenuBtn_t* AddButtonMainMenu(MMenuAction_t action, MyStr_t displayText)",
+			"const char* GetAppStateStr(AppState_t enumValue)",
+			"const char* GetMMenuActionStr(MMenuAction_t enumValue)",
+			"void ClearButtonsMainMenu()",
+			"void GameUiLayout()",
+			"void PlaceButtonsListMainMenu()",
+			"void PostRenderGame()",
+			"void PostUpdateGame()",
+			"void PreRenderGame()",
+			"void PreUpdateGame()",
+			"void RegisterAppState_Game()",
+			"void RegisterAppState_MainMenu()",
+			"void RenderAppState_MainMenu(bool isOnTop)",
+			"void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitionStr)",
+			"void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t transitionStr)",
+			"void StopAppState_Game(bool deinitialize, AppState_t nextState)",
+			"void StopAppState_MainMenu(bool deinitialize, AppState_t nextState)",
+			"void UpdateAppState_Game()",
+			"void UpdateAppState_MainMenu()",
+		],
+		"custom_globals":
+		[
+			"game",
+			"gl",
+			"mmenu",
+		],
+		"custom_types":
+		[
+			"AppState_t",
+			"GameGlobals_t",
+			"GameState_t",
+			"MMenuAction_t",
+			"MMenuBtn_t",
+			"MainMenuState_t",
+		],
+	},
+}
