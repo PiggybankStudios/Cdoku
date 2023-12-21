@@ -169,6 +169,7 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 		);
 	}
 	
+	
 	// +==============================+
 	// |        Render Numbers        |
 	// +==============================+
@@ -183,13 +184,66 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 			{
 				Assert(cell->value <= 9);
 				
-				//TODO: Fix this so it works on the device!
-				#if PLAYDATE_SIMULATOR
-				if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
+				bool foundConflict = false;
+				if (!foundConflict)
+				{
+					for (i32 xOffset = 0; xOffset < BOARD_WIDTH; xOffset++)
+					{
+						if (xOffset != xPos)
+						{
+							Cell_t* otherCell = GetCell(board, NewVec2i(xOffset, yPos));
+							if (otherCell->value == cell->value)
+							{
+								foundConflict = true;
+								break;
+							}
+						}
+					}
+				}
+				if (!foundConflict)
+				{
+					for (i32 yOffset = 0; yOffset < BOARD_HEIGHT; yOffset++)
+					{
+						if (yOffset != yPos)
+						{
+							Cell_t* otherCell = GetCell(board, NewVec2i(xPos, yOffset));
+							if (otherCell->value == cell->value)
+							{
+								foundConflict = true;
+								break;
+							}
+						}
+					}
+				}
+				if (!foundConflict)
+				{
+					v2i groupBase = NewVec2i(xPos - (xPos % GROUP_WIDTH), yPos - (yPos % GROUP_HEIGHT));
+					for (i32 yOffset = 0; yOffset < GROUP_HEIGHT; yOffset++)
+					{
+						for (i32 xOffset = 0; xOffset < GROUP_WIDTH; xOffset++)
+						{
+							if (gridPos != groupBase + NewVec2i(xOffset, yOffset))
+							{
+								Cell_t* otherCell = GetCell(board, groupBase + NewVec2i(xOffset, yOffset));
+								if (otherCell->value == cell->value)
+								{
+									foundConflict = true;
+									break;
+								}
+							}
+						}
+						if (foundConflict) { break; }
+					}
+				}
+				
+				if (foundConflict)
+				{
+					PdDrawTexturedRecPart(game->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+				}
+				else if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
 				{
 					PdDrawTexturedRecPart(game->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
 				}
-				#endif
 				
 				reci numberRec = NewReci(
 					cell->mainRec.x + cell->mainRec.width/2 - game->numbersSheet.frameSize.width/2,

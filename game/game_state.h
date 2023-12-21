@@ -21,9 +21,12 @@ struct GameState_t
 	SpriteSheet_t notesSheet;
 	Texture_t backgroundTexture;
 	Texture_t ditherTexture;
+	Texture_t errorTexture;
 	
 	Board_t board;
 	Cursor_t cursor;
+	
+	bool screenIsDirty;
 };
 
 #endif //  _GAME_STATE_H

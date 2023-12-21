@@ -37,24 +37,28 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 			HandleBtnExtended(Btn_Left);
 			cursor->gridPos.x--;
 			if (cursor->gridPos.x < 0) { cursor->gridPos.x = BOARD_WIDTH-1; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Right))
 		{
 			HandleBtnExtended(Btn_Right);
 			cursor->gridPos.x++;
 			if (cursor->gridPos.x >= BOARD_WIDTH) { cursor->gridPos.x = 0; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Up))
 		{
 			HandleBtnExtended(Btn_Up);
 			cursor->gridPos.y--;
 			if (cursor->gridPos.y < 0) { cursor->gridPos.y = BOARD_HEIGHT-1; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Down))
 		{
 			HandleBtnExtended(Btn_Down);
 			cursor->gridPos.y++;
 			if (cursor->gridPos.y >= BOARD_HEIGHT) { cursor->gridPos.y = 0; }
+			game->screenIsDirty = true;
 		}
 	}
 	
@@ -68,24 +72,28 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 			HandleBtnExtended(Btn_Left);
 			cursor->notePos.x--;
 			if (cursor->notePos.x < 0) { cursor->notePos.x = 3-1; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Right))
 		{
 			HandleBtnExtended(Btn_Right);
 			cursor->notePos.x++;
 			if (cursor->notePos.x >= 3) { cursor->notePos.x = 0; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Up))
 		{
 			HandleBtnExtended(Btn_Up);
 			cursor->notePos.y--;
 			if (cursor->notePos.y < 0) { cursor->notePos.y = 3-1; }
+			game->screenIsDirty = true;
 		}
 		if (BtnPressed(Btn_Down))
 		{
 			HandleBtnExtended(Btn_Down);
 			cursor->notePos.y++;
 			if (cursor->notePos.y >= 3) { cursor->notePos.y = 0; }
+			game->screenIsDirty = true;
 		}
 	}
 	
@@ -98,6 +106,7 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 	if (BtnPressed(Btn_A))
 	{
 		HandleBtnExtended(Btn_A);
+		game->screenIsDirty = true;
 		if (cursor->makingNotes)
 		{
 			u16 noteFlag = (1 << (cursor->notePos.x + (cursor->notePos.y * 3)));
@@ -120,6 +129,7 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 	if (BtnPressed(Btn_B))
 	{
 		HandleBtnExtended(Btn_B);
+		game->screenIsDirty = true;
 		if (cursor->makingNotes)
 		{
 			cursor->makingNotes = false;

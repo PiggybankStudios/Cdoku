@@ -102,6 +102,9 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		game->ditherTexture = LoadTexture(NewStr("Resources/Textures/dither1"));
 		Assert(game->ditherTexture.isValid);
 		
+		game->errorTexture = LoadTexture(NewStr("Resources/Textures/dither2"));
+		Assert(game->errorTexture.isValid);
+		
 		MyStr_t levelFileContents = MyStr_Empty;
 		
 		NotNullStr(&gl->currentLevel);
@@ -148,6 +151,8 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 	}
 	
 	game->mainMenuItem = pd->system->addMenuItem("Main Menu", GameMainMenuSelectedCallback, nullptr);
+	
+	game->screenIsDirty = true;
 }
 
 // +--------------------------------------------------------------+
@@ -200,29 +205,34 @@ void RenderAppState_Game(bool isOnTop)
 	MemArena_t* scratch = GetScratchArena();
 	GameUiLayout();
 	
-	pd->graphics->clear(kColorWhite);
-	PdSetDrawMode(kDrawModeCopy);
-	
-	PdDrawTexturedRec(game->backgroundTexture, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
-	RenderBoard(&game->board, &game->cursor);
-	RenderCursor(&game->cursor, &game->board);
-	
-	// +==============================+
-	// |         Debug Render         |
-	// +==============================+
-	if (pig->debugEnabled)
+	if (game->screenIsDirty)
 	{
-		LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
+		pd->graphics->clear(kColorWhite);
+		PdSetDrawMode(kDrawModeCopy);
 		
-		v2i textPos = NewVec2i(1, 1);
-		if (pig->perfGraph.enabled) { textPos.y += pig->perfGraph.mainRec.y + pig->perfGraph.mainRec.height + 1; }
-		PdBindFont(&pig->debugFont);
-		i32 stepY = pig->debugFont.lineHeight + 1;
+		PdDrawTexturedRec(game->backgroundTexture, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
+		RenderBoard(&game->board, &game->cursor);
+		RenderCursor(&game->cursor, &game->board);
 		
-		PdDrawTextPrint(textPos, "ProgramTime: %u (%u)", ProgramTime, input->realProgramTime);
-		textPos.y += stepY;
+		// +==============================+
+		// |         Debug Render         |
+		// +==============================+
+		if (pig->debugEnabled)
+		{
+			LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
+			
+			v2i textPos = NewVec2i(1, 1);
+			if (pig->perfGraph.enabled) { textPos.y += pig->perfGraph.mainRec.y + pig->perfGraph.mainRec.height + 1; }
+			PdBindFont(&pig->debugFont);
+			i32 stepY = pig->debugFont.lineHeight + 1;
+			
+			PdDrawTextPrint(textPos, "ProgramTime: %u (%u)", ProgramTime, input->realProgramTime);
+			textPos.y += stepY;
+			
+			PdSetDrawMode(oldDrawMode);
+		}
 		
-		PdSetDrawMode(oldDrawMode);
+		game->screenIsDirty = false;
 	}
 	
 	FreeScratchArena(scratch);
