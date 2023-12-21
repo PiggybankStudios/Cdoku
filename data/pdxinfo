@@ -1,0 +1,7 @@
+name=Pig Sudoku
+author=Taylor Robbins
+description=A simple sudoku game for Playdate
+bundleID=com.piggybankstudios.pig_sudoku
+imagePath=Resources/launch_card.png
+version=0.1
+buildNumber=1

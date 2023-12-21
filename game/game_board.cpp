@@ -183,10 +183,13 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 			{
 				Assert(cell->value <= 9);
 				
+				//TODO: Fix this so it works on the device!
+				#if PLAYDATE_SIMULATOR
 				if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
 				{
 					PdDrawTexturedRecPart(game->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
 				}
+				#endif
 				
 				reci numberRec = NewReci(
 					cell->mainRec.x + cell->mainRec.width/2 - game->numbersSheet.frameSize.width/2,
