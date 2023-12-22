@@ -17,12 +17,6 @@ void GameMainMenuSelectedCallback(void* userPntr)
 	game->mainMenuRequested = true;
 }
 
-MyStr_t GetGameSaveFilePath(MemArena_t* memArena)
-{
-	MyStr_t levelName = GetFileNamePart(gl->currentLevel, false);
-	return PrintInArenaStr(memArena, "%.*s_save.txt", StrPrint(levelName));
-}
-
 void GameSaveState()
 {
 	MemArena_t* scratch = GetScratchArena();
@@ -74,7 +68,7 @@ void GameSaveState()
 		}
 	}
 	
-	MyStr_t saveFilePath = GetGameSaveFilePath(scratch);
+	MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel);
 	bool writeSuccess = WriteEntireFile(saveFilePath, ToMyStr(&output));
 	PrintLine_D("%s to \"%.*s\"", (writeSuccess ? "Saved successfully" : "Failed to save"), StrPrint(saveFilePath));
 	
@@ -135,7 +129,7 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		InitBoard(&game->board, levelFileContents);
 		InitCursor(&game->cursor, NewVec2i(4, 4), &game->board);
 		
-		MyStr_t saveFilePath = GetGameSaveFilePath(scratch);
+		MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel);
 		if (DoesFileExist(true, saveFilePath))
 		{
 			MyStr_t saveFileContents;

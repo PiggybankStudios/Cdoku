@@ -9,15 +9,22 @@ Date:   12\19\2023
 
 #define MMENU_TITLE_FONT_PATH        "Resources/Fonts/whacky_joe"
 #define MMENU_BTN_FONT_PATH          "Resources/Fonts/whacky_joe"      
+#define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/pixel8"      
 #define MMENU_BTN_SPACING            10 //px
 #define MMENU_BTN_HORIZONTAL_PADDING 15 //px
 #define MMENU_BTN_VERTICAL_PADDING   8 //px
+
+#define MMENU_LEVEL_BTN_SPACING            1 //px
+#define MMENU_LEVEL_BTN_HORIZONTAL_PADDING 20 //px
+#define MMENU_LEVEL_BTN_VERTICAL_PADDING   4 //px
 
 enum MMenuAction_t
 {
 	MMenuAction_None = 0,
 	MMenuAction_Play,
+	MMenuAction_Level,
 	MMenuAction_Settings,
+	MMenuAction_Back,
 	MMenuAction_Exit,
 	MMenuAction_NumActions,
 };
@@ -27,8 +34,28 @@ const char* GetMMenuActionStr(MMenuAction_t enumValue)
 	{
 		case MMenuAction_None:     return "None";
 		case MMenuAction_Play:     return "Play";
+		case MMenuAction_Level:    return "Level";
 		case MMenuAction_Settings: return "Settings";
+		case MMenuAction_Back:     return "Back";
 		case MMenuAction_Exit:     return "Exit";
+		default: return "Unknown";
+	}
+}
+
+enum MMenuSubMenu_t
+{
+	MMenuSubMenu_None = 0,
+	MMenuSubMenu_LevelSelect,
+	MMenuSubMenu_Options,
+	MMenuSubMenu_NumSubMenus,
+};
+const char* GetMMenuSubMenuStr(MMenuSubMenu_t enumValue)
+{
+	switch (enumValue)
+	{
+		case MMenuSubMenu_None:        return "None";
+		case MMenuSubMenu_LevelSelect: return "LevelSelect";
+		case MMenuSubMenu_Options:     return "Options";
 		default: return "Unknown";
 	}
 }
@@ -36,8 +63,8 @@ const char* GetMMenuActionStr(MMenuAction_t enumValue)
 struct MMenuBtn_t
 {
 	MMenuAction_t action;
-	MyStr_t text;
 	MyStr_t displayText;
+	MyStr_t referencePath;
 	
 	reci mainRec;
 	v2i displayTextSize;
@@ -51,7 +78,10 @@ struct MainMenuState_t
 	SpriteSheet_t handSheet;
 	Font_t titleFont;
 	Font_t buttonFont;
+	Font_t levelBtnFont;
 	
+	MMenuSubMenu_t subMenu;
+	i64 oldSelectionIndices[MMenuSubMenu_NumSubMenus];
 	i64 selectionIndex;
 	VarArray_t buttons; //MMenuBtn_t
 	
