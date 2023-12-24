@@ -94,6 +94,8 @@ struct MainMenuState_t
 	i64 selectionIndex;
 	VarArray_t buttons; //MMenuBtn_t
 	
+	bool scrollToSelection;
+	bool jumpToSelection;
 	r32 scroll;
 	r32 scrollGoto;
 	r32 scrollMax;

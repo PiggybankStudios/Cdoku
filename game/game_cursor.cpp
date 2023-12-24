@@ -25,9 +25,50 @@ Cell_t* GetSelectedCell(Board_t* board, Cursor_t* cursor)
 	return result;
 }
 
+void CursorAddPrevPosition(Cursor_t* cursor, v2i gridPos, Dir2_t moveDir)
+{
+	for (u64 pIndex = 0; pIndex < CURSOR_MAX_PREV_POSITIONS; pIndex++)
+	{
+		CursorPrevPos_t* prevPos = &cursor->prevPositions[pIndex];
+		if (prevPos->animProgress == 0.0f)
+		{
+			prevPos->gridPos = gridPos;
+			prevPos->moveDir = moveDir;
+			prevPos->animProgress = 1.0f;
+			break;
+		}
+	}
+}
+
 bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 {
 	bool boardChanged = false;
+	
+	// +==================================+
+	// | Update Prev Position Animations  |
+	// +==================================+
+	for (u64 pIndex = 0; pIndex < CURSOR_MAX_PREV_POSITIONS; pIndex++)
+	{
+		CursorPrevPos_t* prevPos = &cursor->prevPositions[pIndex];
+		if (prevPos->animProgress > 0.0f)
+		{
+			UpdateAnimationDown(&prevPos->animProgress, CURSOR_PREV_POS_ANIM_TIME);
+			game->screenIsDirty = true;
+			if (prevPos->animProgress > 0.0f) { game->nextUpdateIsDirty = true; }
+		}
+	}
+	if (cursor->moveAnimProgress > 0.0f)
+	{
+		UpdateAnimationDown(&cursor->moveAnimProgress, CURSOR_PREV_POS_ANIM_TIME);
+		game->screenIsDirty = true;
+		if (cursor->moveAnimProgress > 0.0f) { game->nextUpdateIsDirty = true; }
+	}
+	if (cursor->makingNotesAnimProgress > 0.0f)
+	{
+		UpdateAnimationDown(&cursor->makingNotesAnimProgress, CURSOR_NOTE_TAKING_ANIM_TIME);
+		game->screenIsDirty = true;
+		if (cursor->makingNotesAnimProgress > 0.0f) { game->nextUpdateIsDirty = true; }
+	}
 	
 	// +==============================+
 	// |       Cursor Movement        |
@@ -37,6 +78,8 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		if (BtnPressed(Btn_Left))
 		{
 			HandleBtnExtended(Btn_Left);
+			CursorAddPrevPosition(cursor, cursor->gridPos, Dir2_Left);
+			cursor->moveAnimProgress = 1.0f;
 			cursor->gridPos.x--;
 			if (cursor->gridPos.x < 0) { cursor->gridPos.x = BOARD_WIDTH-1; }
 			game->screenIsDirty = true;
@@ -44,6 +87,8 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		if (BtnPressed(Btn_Right))
 		{
 			HandleBtnExtended(Btn_Right);
+			CursorAddPrevPosition(cursor, cursor->gridPos, Dir2_Right);
+			cursor->moveAnimProgress = 1.0f;
 			cursor->gridPos.x++;
 			if (cursor->gridPos.x >= BOARD_WIDTH) { cursor->gridPos.x = 0; }
 			game->screenIsDirty = true;
@@ -51,6 +96,8 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		if (BtnPressed(Btn_Up))
 		{
 			HandleBtnExtended(Btn_Up);
+			CursorAddPrevPosition(cursor, cursor->gridPos, Dir2_Up);
+			cursor->moveAnimProgress = 1.0f;
 			cursor->gridPos.y--;
 			if (cursor->gridPos.y < 0) { cursor->gridPos.y = BOARD_HEIGHT-1; }
 			game->screenIsDirty = true;
@@ -58,6 +105,8 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		if (BtnPressed(Btn_Down))
 		{
 			HandleBtnExtended(Btn_Down);
+			CursorAddPrevPosition(cursor, cursor->gridPos, Dir2_Down);
+			cursor->moveAnimProgress = 1.0f;
 			cursor->gridPos.y++;
 			if (cursor->gridPos.y >= BOARD_HEIGHT) { cursor->gridPos.y = 0; }
 			game->screenIsDirty = true;
@@ -137,6 +186,7 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		if (cursor->makingNotes)
 		{
 			cursor->makingNotes = false;
+			cursor->makingNotesAnimProgress = 1.0f;
 		}
 		else
 		{
@@ -145,6 +195,7 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 				if (selectedCell->value == 0)
 				{
 					cursor->makingNotes = true;
+					cursor->makingNotesAnimProgress = 1.0f;
 				}
 				else
 				{
@@ -162,6 +213,29 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 {
 	Cell_t* selectedCell = GetSelectedCell(board, cursor);
 	
+	// +==============================+
+	// |  Render Previous Positions   |
+	// +==============================+
+	for (u64 pIndex = 0; pIndex < CURSOR_MAX_PREV_POSITIONS; pIndex++)
+	{
+		CursorPrevPos_t* prevPos = &cursor->prevPositions[pIndex];
+		if (prevPos->animProgress > 0.0f)
+		{
+			Cell_t* prevCell = GetCell(board, prevPos->gridPos);
+			reci drawRec = prevCell->innerRec;
+			switch (prevPos->moveDir)
+			{
+				case Dir2_Left:  drawRec = ReciExpandRight(drawRec, -RoundR32i((r32)drawRec.width  * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateY(drawRec, RoundR32i(((r32)drawRec.height/2) * (1-prevPos->animProgress))); break;
+				case Dir2_Right: drawRec = ReciExpandLeft(drawRec,  -RoundR32i((r32)drawRec.width  * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateY(drawRec, RoundR32i(((r32)drawRec.height/2) * (1-prevPos->animProgress))); break;
+				case Dir2_Up:    drawRec = ReciExpandDown(drawRec,  -RoundR32i((r32)drawRec.height * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateX(drawRec, RoundR32i(((r32)drawRec.width/2) * (1-prevPos->animProgress))); break;
+				case Dir2_Down:  drawRec = ReciExpandUp(drawRec,    -RoundR32i((r32)drawRec.height * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateX(drawRec, RoundR32i(((r32)drawRec.width/2) * (1-prevPos->animProgress))); break;
+			}
+			LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
+			PdDrawRec(drawRec, kColorBlack);
+			PdSetDrawMode(oldDrawMode);
+		}
+	}
+	
 	if (cursor->makingNotes)
 	{
 		v2i noteSize = NewVec2i(selectedCell->mainRec.width / 3, selectedCell->mainRec.height / 3);
@@ -170,10 +244,17 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 			selectedCell->innerRec.y + noteSize.height * cursor->notePos.y,
 			noteSize
 		);
+		if (cursor->makingNotesAnimProgress > 0.0f)
+		{
+			noteRec.x      = RoundR32i(LerpR32((r32)noteRec.x,      (r32)selectedCell->innerRec.x,      EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+			noteRec.y      = RoundR32i(LerpR32((r32)noteRec.y,      (r32)selectedCell->innerRec.y,      EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+			noteRec.width  = RoundR32i(LerpR32((r32)noteRec.width,  (r32)selectedCell->innerRec.width,  EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+			noteRec.height = RoundR32i(LerpR32((r32)noteRec.height, (r32)selectedCell->innerRec.height, EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+		}
 		
 		u16 noteFlag = (1 << (cursor->notePos.x + (cursor->notePos.y * 3)));
 		
-		if (IsFlagSet(selectedCell->notes, noteFlag))
+		if (IsFlagSet(selectedCell->notes, noteFlag) || cursor->makingNotesAnimProgress > 0.0f)
 		{
 			LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
 			PdDrawRec(noteRec, kColorBlack);
@@ -186,8 +267,33 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 	}
 	else
 	{
+		reci cursorRec = selectedCell->innerRec;
+		if (cursor->moveAnimProgress > 0.0f)
+		{
+			cursorRec = ReciDeflate(
+				cursorRec,
+				RoundR32i(((r32)cursorRec.width/2) * EaseCubicIn(cursor->moveAnimProgress)),
+				RoundR32i(((r32)cursorRec.height/2) * EaseCubicIn(cursor->moveAnimProgress))
+			);
+		}
+		else if (cursor->makingNotesAnimProgress > 0.0f)
+		{
+			v2i noteSize = NewVec2i(selectedCell->mainRec.width / 3, selectedCell->mainRec.height / 3);
+			reci noteRec = NewReci(
+				selectedCell->innerRec.x + noteSize.width * cursor->notePos.x,
+				selectedCell->innerRec.y + noteSize.height * cursor->notePos.y,
+				noteSize
+			);
+			if (cursor->makingNotesAnimProgress > 0.0f)
+			{
+				cursorRec.x      = RoundR32i(LerpR32((r32)cursorRec.x,      (r32)noteRec.x,      EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+				cursorRec.y      = RoundR32i(LerpR32((r32)cursorRec.y,      (r32)noteRec.y,      EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+				cursorRec.width  = RoundR32i(LerpR32((r32)cursorRec.width,  (r32)noteRec.width,  EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+				cursorRec.height = RoundR32i(LerpR32((r32)cursorRec.height, (r32)noteRec.height, EaseQuadraticIn(cursor->makingNotesAnimProgress)));
+			}
+		}
 		LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
-		PdDrawRec(selectedCell->innerRec, kColorBlack);
+		PdDrawRec(cursorRec, kColorBlack);
 		PdSetDrawMode(oldDrawMode);
 	}
 }

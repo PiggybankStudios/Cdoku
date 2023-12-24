@@ -11,4 +11,6 @@ Date:   12\19\2023
 
 #define FIRST_APP_STATE  AppState_MainMenu
 
+#define GAME_COMPLETION_ANIM_TIME   3000 //ms
+
 #endif //  _GAME_DEFINES_H

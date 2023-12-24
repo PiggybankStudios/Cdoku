@@ -217,7 +217,7 @@ bool BoardCheckCompletion(Board_t* board)
 	return true;
 }
 
-void RenderBoard(Board_t* board, Cursor_t* cursor)
+void RenderBoard(Board_t* board, Cursor_t* cursor, bool completed)
 {
 	PdDrawRec(board->mainRec, kColorWhite);
 	PdDrawRecOutline(board->mainRec, BOARD_OUTLINE_THICKNESS, true, kColorBlack);
@@ -273,13 +273,16 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 			{
 				Assert(cell->value <= 9);
 				
-				if (IsFlagSet(cell->flags, CellFlag_Conflict))
+				if (!completed)
 				{
-					PdDrawTexturedRecPart(gl->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
-				}
-				else if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
-				{
-					PdDrawTexturedRecPart(gl->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					if (IsFlagSet(cell->flags, CellFlag_Conflict))
+					{
+						PdDrawTexturedRecPart(gl->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					}
+					else if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
+					{
+						PdDrawTexturedRecPart(gl->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					}
 				}
 				
 				reci numberRec = NewReci(

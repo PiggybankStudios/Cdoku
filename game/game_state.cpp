@@ -140,6 +140,7 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 			PrintLine_I("Reading completed save data from \"%.*s\"", StrPrint(saveFilePath));
 			game->completed = true;
 			game->completedAnimStartTime = ProgramTime;
+			game->completedAnimRand = GetRandU32(&pig->random);
 			MyStr_t completedFileContents;
 			if (ReadEntireFile(true, completedFilePath, &completedFileContents, scratch))
 			{
@@ -196,6 +197,12 @@ void UpdateAppState_Game()
 {
 	MemArena_t* scratch = GetScratchArena();
 	
+	if (game->nextUpdateIsDirty)
+	{
+		game->screenIsDirty = true;
+		game->nextUpdateIsDirty = false;
+	}
+	
 	if (game->mainMenuRequested)
 	{
 		game->mainMenuRequested = false;
@@ -205,7 +212,11 @@ void UpdateAppState_Game()
 	// +==============================+
 	// |        Update Cursor         |
 	// +==============================+
-	bool boardChanged = UpdateCursor(&game->cursor, &game->board);
+	bool boardChanged = false;
+	if (!game->completed)
+	{
+		boardChanged = UpdateCursor(&game->cursor, &game->board);
+	}
 	
 	// +==============================+
 	// |     Check for Conflicts      |
@@ -225,9 +236,27 @@ void UpdateAppState_Game()
 			WriteLine_I("Board completed!");
 			game->completed = true;
 			game->completedAnimStartTime = ProgramTime;
+			game->completedAnimRand = GetRandU32(&pig->random);
 			GameSaveState();
 		}
 	}
+	if (game->completed && game->completedAnimStartTime != 0 && TimeSince(game->completedAnimStartTime) <= GAME_COMPLETION_ANIM_TIME)
+	{
+		game->screenIsDirty = true;
+		game->nextUpdateIsDirty = true;
+	}
+	
+	// +===============================+
+	// | Debug Restart Completion Anim |
+	// +===============================+
+	#if DEBUG_BUILD
+	if (game->completed && BtnPressed(Btn_A))
+	{
+		HandleBtnExtended(Btn_A);
+		game->completedAnimStartTime = ProgramTime;
+		game->completedAnimRand = GetRandU32(&pig->random);
+	}
+	#endif
 	
 	FreeScratchArena(scratch);
 }
@@ -242,12 +271,57 @@ void RenderAppState_Game(bool isOnTop)
 	
 	if (game->screenIsDirty)
 	{
+		game->screenIsDirty = false;
+		
 		pd->graphics->clear(kColorWhite);
 		PdSetDrawMode(kDrawModeCopy);
 		
 		PdDrawTexturedRec(game->backgroundTexture, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
-		RenderBoard(&game->board, &game->cursor);
-		RenderCursor(&game->cursor, &game->board);
+		RenderBoard(&game->board, &game->cursor, game->completed);
+		if (!game->completed)
+		{
+			RenderCursor(&game->cursor, &game->board);
+		}
+		
+		// +==============================+
+		// | Render Completion Animation  |
+		// +==============================+
+		if (game->completed && game->completedAnimStartTime != 0)
+		{
+			u32 animRunTime = TimeSince(game->completedAnimStartTime);
+			r32 animProgress = (r32)animRunTime / (r32)GAME_COMPLETION_ANIM_TIME;
+			RandomSeries_t completionRandom;
+			CreateRandomSeries(&completionRandom);
+			SeedRandomSeriesU32(&completionRandom, game->completedAnimRand);
+			
+			LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
+			
+			const u32 numColumns = 40;
+			for (u32 column = 0; column < numColumns; column++)
+			{
+				reci columnRec = NewReci(column * (ScreenSize.width / numColumns), 0, (ScreenSize.width / numColumns), ScreenSize.height);
+				r32 speed = GetRandR32(&completionRandom, 0.4f, 1.0f);
+				r32 offset = GetRandR32(&completionRandom, 0, 1.0f - speed);
+				EasingStyle_t easingStyle = EasingStyle_QuadraticInOut;
+				switch (GetRandU32(&completionRandom, 0, 7))
+				{
+					case 0: easingStyle = EasingStyle_Linear; break;
+					case 1: easingStyle = EasingStyle_QuadraticOut; break;
+					case 2: easingStyle = EasingStyle_QuadraticInOut; break;
+					case 3: easingStyle = EasingStyle_QuadraticIn; break;
+					case 4: easingStyle = EasingStyle_CubicOut; break;
+					case 5: easingStyle = EasingStyle_CubicInOut; break;
+					case 6: easingStyle = EasingStyle_CubicIn; break;
+				}
+				columnRec.height = RoundR32i((r32)columnRec.height * Ease(easingStyle, SubAnimAmountR32(animProgress, offset, offset + speed)));
+				PdDrawRec(columnRec, kColorBlack);
+			}
+			
+			// reci invertRec = NewReci(0, 0, RoundR32i(ScreenSize.width * animProgress), ScreenSize.height);
+			// PdDrawRec(invertRec, kColorBlack);
+			
+			PdSetDrawMode(oldDrawMode);
+		}
 		
 		// +==============================+
 		// |         Debug Render         |
@@ -266,8 +340,6 @@ void RenderAppState_Game(bool isOnTop)
 			
 			PdSetDrawMode(oldDrawMode);
 		}
-		
-		game->screenIsDirty = false;
 	}
 	
 	FreeScratchArena(scratch);

@@ -15,6 +15,7 @@ struct GameState_t
 	bool initialized;
 	bool completed;
 	u32 completedAnimStartTime;
+	u32 completedAnimRand;
 	
 	PDMenuItem* mainMenuItem;
 	bool mainMenuRequested;
@@ -27,6 +28,7 @@ struct GameState_t
 	Cursor_t cursor;
 	
 	bool screenIsDirty;
+	bool nextUpdateIsDirty;
 };
 
 #endif //  _GAME_STATE_H

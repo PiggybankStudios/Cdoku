@@ -151,6 +151,7 @@ void MainMenuGotoSubMenu(MMenuSubMenu_t newSubMenu)
 	{
 		mmenu->selectionIndex = (mmenu->buttons.length > 0) ? ((i64)mmenu->buttons.length-1) : -1;
 	}
+	mmenu->jumpToSelection = true;
 }
 
 // +--------------------------------------------------------------+
@@ -186,6 +187,7 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 	
 	MainMenuGenerateButtons(mmenu->subMenu);
 	PlaceButtonsListMainMenu();
+	mmenu->jumpToSelection = true;
 	
 	mmenu->crankAngleRef = ToRadians32(input->crankAngle);
 }
@@ -274,13 +276,12 @@ void UpdateAppState_MainMenu()
 	// +==============================+
 	// |        Handle Up/Down        |
 	// +==============================+
-	bool selectionChanged = false;
 	if (BtnPressed(Btn_Up))
 	{
 		HandleBtnExtended(Btn_Up);
 		if (mmenu->buttons.length > 0)
 		{
-			selectionChanged = true;
+			mmenu->scrollToSelection = true;
 			if (mmenu->selectionIndex < 0)
 			{
 				mmenu->selectionIndex = 0;
@@ -299,7 +300,7 @@ void UpdateAppState_MainMenu()
 		HandleBtnExtended(Btn_Down);
 		if (mmenu->buttons.length > 0)
 		{
-			selectionChanged = true;
+			mmenu->scrollToSelection = true;
 			if (mmenu->selectionIndex < 0)
 			{
 				mmenu->selectionIndex = 0;
@@ -326,7 +327,7 @@ void UpdateAppState_MainMenu()
 		
 		if (mmenu->buttons.length > 0)
 		{
-			selectionChanged = true;
+			mmenu->scrollToSelection = true;
 			if (mmenu->selectionIndex < 0)
 			{
 				mmenu->selectionIndex = 0;
@@ -354,7 +355,7 @@ void UpdateAppState_MainMenu()
 	// +==============================+
 	// |    Scroll to Selected Btn    |
 	// +==============================+
-	if (mmenu->selectionIndex >= 0 && selectionChanged)
+	if (mmenu->selectionIndex >= 0 && (mmenu->scrollToSelection || mmenu->jumpToSelection))
 	{
 		MMenuBtn_t* selectedBtn = VarArrayGetHard(&mmenu->buttons, (u64)mmenu->selectionIndex, MMenuBtn_t);
 		mmenu->scrollGoto = (r32)selectedBtn->mainRec.y + (r32)selectedBtn->mainRec.height/2 - (r32)ScreenSize.height/2;
@@ -376,7 +377,7 @@ void UpdateAppState_MainMenu()
 	mmenu->scroll = ClampR32(mmenu->scroll, 0, mmenu->scrollMax);
 	mmenu->scrollGoto = ClampR32(mmenu->scrollGoto, 0, mmenu->scrollMax);
 	r32 scrollDelta = mmenu->scrollGoto - mmenu->scroll;
-	if (AbsR32(scrollDelta) > 1.0f)
+	if (AbsR32(scrollDelta) > 1.0f && !mmenu->jumpToSelection)
 	{
 		mmenu->scroll += scrollDelta / MMENU_SCROLL_LAG;
 	}
@@ -385,6 +386,8 @@ void UpdateAppState_MainMenu()
 		mmenu->scroll = mmenu->scrollGoto;
 	}
 	
+	mmenu->scrollToSelection = false;
+	mmenu->jumpToSelection = false;
 	FreeScratchArena(scratch);
 }
 
@@ -417,8 +420,7 @@ void RenderAppState_MainMenu(bool isOnTop)
 		if (button->isCompleted)
 		{
 			PdDrawRec(mainRec, kColorBlack);
-			PdDrawRecOutline(mainRec, 4, false, kColorBlack);
-			PdDrawRecOutline(mainRec, 2, false, kColorWhite);
+			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
 		}
 		else if (button->hasSaveFile)
 		{
@@ -434,7 +436,7 @@ void RenderAppState_MainMenu(bool isOnTop)
 		
 		v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
 		PdBindFont(font);
-		LCDBitmapDrawMode oldDrawMode;
+		LCDBitmapDrawMode oldDrawMode = kDrawModeCopy;
 		if (button->isCompleted) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
 		PdDrawText(displayText, displayTextPos);
 		if (button->isCompleted) { PdSetDrawMode(oldDrawMode); }
