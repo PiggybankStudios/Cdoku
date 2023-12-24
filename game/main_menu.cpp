@@ -70,10 +70,12 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 			if (levelFiles.success)
 			{
 				PrintLine_D("There are %llu levels! (allocation %llu %p)", levelFiles.count, levelFiles.mainAllocation.length, levelFiles.mainAllocation.pntr);
+				#if 0
 				for (u64 fIndex = 0; fIndex < levelFiles.count; fIndex++)
 				{
 					PrintLine_D("[%llu]: \"%.*s\"", fIndex, StrPrint(levelFiles.paths[fIndex]));
 				}
+				#endif
 				
 				for (u64 fIndex = 0; fIndex < levelFiles.count; fIndex++)
 				{
