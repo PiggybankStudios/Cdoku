@@ -80,11 +80,15 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 					PushMemMark(scratch);
 					MyStr_t levelPath = levelFiles.paths[fIndex];
 					MyStr_t levelName = GetFileNamePart(levelPath, false);
-					MyStr_t savePath = GetLevelSaveFilePath(scratch, levelPath);
-					bool hasSaveFile = DoesFileExist(true, savePath);
-					MyStr_t displayText = PrintInArenaStr(scratch, "%.*s%s", StrPrint(levelName), (hasSaveFile ? "*" : ""));
+					MyStr_t completedPath = GetLevelSaveFilePath(scratch, levelPath, true);
+					MyStr_t savePath = GetLevelSaveFilePath(scratch, levelPath, false);
+					bool isCompleted = DoesFileExist(true, completedPath);
+					bool hasSaveFile = (isCompleted || DoesFileExist(true, savePath));
+					MyStr_t displayText = PrintInArenaStr(scratch, "%.*s", StrPrint(levelName));
 					for (u64 cIndex = 0; cIndex < displayText.length; cIndex++) { displayText.chars[cIndex] = GetUppercaseAnsiiChar(displayText.chars[cIndex]); }
 					MMenuBtn_t* newBtn = AddButtonMainMenu(MMenuAction_Level, displayText, levelPath);
+					newBtn->isCompleted = isCompleted;
+					newBtn->hasSaveFile = hasSaveFile;
 					PopMemMark(scratch);
 				}
 			}
@@ -408,13 +412,32 @@ void RenderAppState_MainMenu(bool isOnTop)
 		VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
 		reci mainRec = button->mainRec + mmenu->buttonListRec.topLeft + NewVec2i(0, RoundR32i(-mmenu->scroll));
 		Font_t* font = ((button->action == MMenuAction_Level) ? &mmenu->levelBtnFont : &mmenu->buttonFont);
+		MyStr_t displayText = button->displayText;
 		
-		PdDrawRec(mainRec, kColorWhite);
-		PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+		if (button->isCompleted)
+		{
+			PdDrawRec(mainRec, kColorBlack);
+			PdDrawRecOutline(mainRec, 4, false, kColorBlack);
+			PdDrawRecOutline(mainRec, 2, false, kColorWhite);
+		}
+		else if (button->hasSaveFile)
+		{
+			displayText = PrintInArenaStr(scratch, "%.*s*", StrPrint(displayText));
+			PdDrawTexturedRecPart(gl->ditherTexture, mainRec, NewReci(0, 0, mainRec.size));
+			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+		}
+		else
+		{
+			PdDrawRec(mainRec, kColorWhite);
+			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+		}
 		
 		v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
 		PdBindFont(font);
-		PdDrawText(button->displayText, displayTextPos);
+		LCDBitmapDrawMode oldDrawMode;
+		if (button->isCompleted) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
+		PdDrawText(displayText, displayTextPos);
+		if (button->isCompleted) { PdSetDrawMode(oldDrawMode); }
 		
 		if (mmenu->selectionIndex >= 0 && (u64)mmenu->selectionIndex == bIndex)
 		{

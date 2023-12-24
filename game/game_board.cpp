@@ -128,6 +128,95 @@ void BoardLayoutUi(Board_t* board, reci availableRec)
 	}
 }
 
+void BoardUpdateConflicts(Board_t* board)
+{
+	NotNull(board);
+	for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
+	{
+		for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
+		{
+			v2i gridPos = NewVec2i(xPos, yPos);
+			Cell_t* cell = GetCell(board, gridPos);
+			
+			if (cell->value > 0)
+			{
+				bool foundConflict = false;
+				if (!foundConflict)
+				{
+					for (i32 xOffset = 0; xOffset < BOARD_WIDTH; xOffset++)
+					{
+						if (xOffset != xPos)
+						{
+							Cell_t* otherCell = GetCell(board, NewVec2i(xOffset, yPos));
+							if (otherCell->value == cell->value)
+							{
+								foundConflict = true;
+								break;
+							}
+						}
+					}
+				}
+				if (!foundConflict)
+				{
+					for (i32 yOffset = 0; yOffset < BOARD_HEIGHT; yOffset++)
+					{
+						if (yOffset != yPos)
+						{
+							Cell_t* otherCell = GetCell(board, NewVec2i(xPos, yOffset));
+							if (otherCell->value == cell->value)
+							{
+								foundConflict = true;
+								break;
+							}
+						}
+					}
+				}
+				if (!foundConflict)
+				{
+					v2i groupBase = NewVec2i(xPos - (xPos % GROUP_WIDTH), yPos - (yPos % GROUP_HEIGHT));
+					for (i32 yOffset = 0; yOffset < GROUP_HEIGHT; yOffset++)
+					{
+						for (i32 xOffset = 0; xOffset < GROUP_WIDTH; xOffset++)
+						{
+							if (gridPos != groupBase + NewVec2i(xOffset, yOffset))
+							{
+								Cell_t* otherCell = GetCell(board, groupBase + NewVec2i(xOffset, yOffset));
+								if (otherCell->value == cell->value)
+								{
+									foundConflict = true;
+									break;
+								}
+							}
+						}
+						if (foundConflict) { break; }
+					}
+				}
+				
+				FlagSetTo(cell->flags, CellFlag_Conflict, foundConflict);
+			}
+			else
+			{
+				FlagUnset(cell->flags, CellFlag_Conflict);
+			}
+		}
+	}
+}
+
+bool BoardCheckCompletion(Board_t* board)
+{
+	for (i32 yPos = 0; yPos < BOARD_HEIGHT; yPos++)
+	{
+		for (i32 xPos = 0; xPos < BOARD_WIDTH; xPos++)
+		{
+			v2i gridPos = NewVec2i(xPos, yPos);
+			Cell_t* cell = GetCell(board, gridPos);
+			if (cell->value == 0) { return false; } //any empty spaces mean not completed
+			if (IsFlagSet(cell->flags, CellFlag_Conflict)) { return false; } //any conflicts mean not completed correctly
+		}
+	}
+	return true;
+}
+
 void RenderBoard(Board_t* board, Cursor_t* cursor)
 {
 	PdDrawRec(board->mainRec, kColorWhite);
@@ -184,65 +273,13 @@ void RenderBoard(Board_t* board, Cursor_t* cursor)
 			{
 				Assert(cell->value <= 9);
 				
-				bool foundConflict = false;
-				if (!foundConflict)
+				if (IsFlagSet(cell->flags, CellFlag_Conflict))
 				{
-					for (i32 xOffset = 0; xOffset < BOARD_WIDTH; xOffset++)
-					{
-						if (xOffset != xPos)
-						{
-							Cell_t* otherCell = GetCell(board, NewVec2i(xOffset, yPos));
-							if (otherCell->value == cell->value)
-							{
-								foundConflict = true;
-								break;
-							}
-						}
-					}
-				}
-				if (!foundConflict)
-				{
-					for (i32 yOffset = 0; yOffset < BOARD_HEIGHT; yOffset++)
-					{
-						if (yOffset != yPos)
-						{
-							Cell_t* otherCell = GetCell(board, NewVec2i(xPos, yOffset));
-							if (otherCell->value == cell->value)
-							{
-								foundConflict = true;
-								break;
-							}
-						}
-					}
-				}
-				if (!foundConflict)
-				{
-					v2i groupBase = NewVec2i(xPos - (xPos % GROUP_WIDTH), yPos - (yPos % GROUP_HEIGHT));
-					for (i32 yOffset = 0; yOffset < GROUP_HEIGHT; yOffset++)
-					{
-						for (i32 xOffset = 0; xOffset < GROUP_WIDTH; xOffset++)
-						{
-							if (gridPos != groupBase + NewVec2i(xOffset, yOffset))
-							{
-								Cell_t* otherCell = GetCell(board, groupBase + NewVec2i(xOffset, yOffset));
-								if (otherCell->value == cell->value)
-								{
-									foundConflict = true;
-									break;
-								}
-							}
-						}
-						if (foundConflict) { break; }
-					}
-				}
-				
-				if (foundConflict)
-				{
-					PdDrawTexturedRecPart(game->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					PdDrawTexturedRecPart(gl->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
 				}
 				else if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
 				{
-					PdDrawTexturedRecPart(game->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					PdDrawTexturedRecPart(gl->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
 				}
 				
 				reci numberRec = NewReci(

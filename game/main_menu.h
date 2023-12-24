@@ -72,6 +72,8 @@ struct MMenuBtn_t
 	MMenuAction_t action;
 	MyStr_t displayText;
 	MyStr_t referencePath;
+	bool isCompleted;
+	bool hasSaveFile;
 	
 	reci mainRec;
 	v2i displayTextSize;

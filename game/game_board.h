@@ -22,8 +22,8 @@ enum CellFlag_t
 {
 	CellFlag_None = 0x00,
 	
-	CellFlag_IsGiven = 0x01,
-	// CellFlag_Unused  = 0x02,
+	CellFlag_IsGiven  = 0x01,
+	CellFlag_Conflict = 0x02,
 	// CellFlag_Unused  = 0x04,
 	// CellFlag_Unused  = 0x08,
 	// CellFlag_Unused  = 0x10,
@@ -31,7 +31,7 @@ enum CellFlag_t
 	// CellFlag_Unused  = 0x40,
 	// CellFlag_Unused  = 0x80,
 	
-	CellFlag_NumFlags = 1,
+	CellFlag_NumFlags = 2,
 };
 const char* GetCellFlagStr(CellFlag_t enumValue)
 {
@@ -39,6 +39,7 @@ const char* GetCellFlagStr(CellFlag_t enumValue)
 	{
 		case CellFlag_None:        return "None";
 		case CellFlag_IsGiven:     return "IsGiven";
+		case CellFlag_Conflict:    return "Conflict";
 		default: return "Unknown";
 	}
 }

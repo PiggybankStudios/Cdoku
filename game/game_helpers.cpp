@@ -12,8 +12,8 @@ void SetCurrentLevel(MyStr_t levelPath)
 	gl->currentLevel = AllocString(mainHeap, &levelPath);
 }
 
-MyStr_t GetLevelSaveFilePath(MemArena_t* memArena, MyStr_t levelPath)
+MyStr_t GetLevelSaveFilePath(MemArena_t* memArena, MyStr_t levelPath, bool completed)
 {
 	MyStr_t levelName = GetFileNamePart(levelPath, false);
-	return PrintInArenaStr(memArena, "%.*s_save.txt", StrPrint(levelName));
+	return PrintInArenaStr(memArena, "%.*s_%s.txt", StrPrint(levelName), (completed ? "completed" : "save"));
 }

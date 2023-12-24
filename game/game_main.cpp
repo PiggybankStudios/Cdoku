@@ -34,6 +34,12 @@ AppState_t InitGame()
 	ClearPointer(gl);
 	gl->initialized = true;
 	
+	gl->ditherTexture = LoadTexture(NewStr("Resources/Textures/dither1"));
+	Assert(gl->ditherTexture.isValid);
+	
+	gl->errorTexture = LoadTexture(NewStr("Resources/Textures/dither2"));
+	Assert(gl->errorTexture.isValid);
+	
 	return FIRST_APP_STATE;
 }
 

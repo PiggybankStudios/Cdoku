@@ -2,4 +2,15 @@
 # TODO List:
 	[ ] 
 
+# Ideas for Options
+	[ ] Different fonts
+	[ ] Highlight matching numbers
+	[ ] Highlight conflicts
+	[ ] Highlight errors (even if they aren't conflicts yet)
+	[ ] Reset note cursor each time we enter notes
+	[ ] Input style
+		@ Default
+		@ Crank to select number, a to place, b to toggle note
+	[ ] Grey out completed numbers
+
 [X] Checked off item placeholder

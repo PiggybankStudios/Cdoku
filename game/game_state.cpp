@@ -68,9 +68,19 @@ void GameSaveState()
 		}
 	}
 	
-	MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel);
+	MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, game->completed);
 	bool writeSuccess = WriteEntireFile(saveFilePath, ToMyStr(&output));
 	PrintLine_D("%s to \"%.*s\"", (writeSuccess ? "Saved successfully" : "Failed to save"), StrPrint(saveFilePath));
+	
+	if (game->completed)
+	{
+		// Delete the in-progress save file if we have completed this level
+		MyStr_t oldSaveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, false);
+		if (DoesFileExist(true, oldSaveFilePath))
+		{
+			DeleteFile(oldSaveFilePath);
+		}
+	}
 	
 	FreeScratchArena(scratch);
 }
@@ -92,12 +102,6 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		
 		game->backgroundTexture = LoadTexture(NewStr("Resources/Textures/background"));
 		Assert(game->backgroundTexture.isValid);
-		
-		game->ditherTexture = LoadTexture(NewStr("Resources/Textures/dither1"));
-		Assert(game->ditherTexture.isValid);
-		
-		game->errorTexture = LoadTexture(NewStr("Resources/Textures/dither2"));
-		Assert(game->errorTexture.isValid);
 		
 		MyStr_t levelFileContents = MyStr_Empty;
 		
@@ -129,13 +133,25 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		InitBoard(&game->board, levelFileContents);
 		InitCursor(&game->cursor, NewVec2i(4, 4), &game->board);
 		
-		MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel);
-		if (DoesFileExist(true, saveFilePath))
+		MyStr_t completedFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, true);
+		MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, false);
+		if (DoesFileExist(true, completedFilePath))
 		{
+			PrintLine_I("Reading completed save data from \"%.*s\"", StrPrint(saveFilePath));
+			game->completed = true;
+			game->completedAnimStartTime = ProgramTime;
+			MyStr_t completedFileContents;
+			if (ReadEntireFile(true, completedFilePath, &completedFileContents, scratch))
+			{
+				LoadSaveInfo(&game->board, completedFileContents);
+			}
+		}
+		else if (DoesFileExist(true, saveFilePath))
+		{
+			PrintLine_I("Reading save data from \"%.*s\"", StrPrint(saveFilePath));
 			MyStr_t saveFileContents;
 			if (ReadEntireFile(true, saveFilePath, &saveFileContents, scratch))
 			{
-				PrintLine_I("Reading save data from \"%.*s\"", StrPrint(saveFilePath));
 				LoadSaveInfo(&game->board, saveFileContents);
 			}
 		}
@@ -186,7 +202,32 @@ void UpdateAppState_Game()
 		PopAppState();
 	}
 	
-	UpdateCursor(&game->cursor, &game->board);
+	// +==============================+
+	// |        Update Cursor         |
+	// +==============================+
+	bool boardChanged = UpdateCursor(&game->cursor, &game->board);
+	
+	// +==============================+
+	// |     Check for Conflicts      |
+	// +==============================+
+	if (boardChanged)
+	{
+		BoardUpdateConflicts(&game->board);
+	}
+	
+	// +==============================+
+	// |     Check for Completion     |
+	// +==============================+
+	if (boardChanged && !game->completed)
+	{
+		if (BoardCheckCompletion(&game->board))
+		{
+			WriteLine_I("Board completed!");
+			game->completed = true;
+			game->completedAnimStartTime = ProgramTime;
+			GameSaveState();
+		}
+	}
 	
 	FreeScratchArena(scratch);
 }

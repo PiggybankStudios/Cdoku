@@ -13,6 +13,8 @@ Date:   12\19\2023
 struct GameState_t
 {
 	bool initialized;
+	bool completed;
+	u32 completedAnimStartTime;
 	
 	PDMenuItem* mainMenuItem;
 	bool mainMenuRequested;
@@ -20,8 +22,6 @@ struct GameState_t
 	SpriteSheet_t numbersSheet;
 	SpriteSheet_t notesSheet;
 	Texture_t backgroundTexture;
-	Texture_t ditherTexture;
-	Texture_t errorTexture;
 	
 	Board_t board;
 	Cursor_t cursor;

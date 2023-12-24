@@ -25,8 +25,10 @@ Cell_t* GetSelectedCell(Board_t* board, Cursor_t* cursor)
 	return result;
 }
 
-void UpdateCursor(Cursor_t* cursor, Board_t* board)
+bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 {
+	bool boardChanged = false;
+	
 	// +==============================+
 	// |       Cursor Movement        |
 	// +==============================+
@@ -111,6 +113,7 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 		{
 			u16 noteFlag = (1 << (cursor->notePos.x + (cursor->notePos.y * 3)));
 			FlagToggle(selectedCell->notes, noteFlag);
+			boardChanged = true;
 		}
 		else
 		{
@@ -118,6 +121,7 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 			{
 				selectedCell->value++;
 				if (selectedCell->value > 9) { selectedCell->value = 0; }
+				boardChanged = true;
 			}
 		}
 	}
@@ -145,10 +149,13 @@ void UpdateCursor(Cursor_t* cursor, Board_t* board)
 				else
 				{
 					selectedCell->value = 0;
+					boardChanged = true;
 				}
 			}
 		}
 	}
+	
+	return boardChanged;
 }
 
 void RenderCursor(Cursor_t* cursor, Board_t* board)
