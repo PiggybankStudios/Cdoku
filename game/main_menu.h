@@ -9,14 +9,21 @@ Date:   12\19\2023
 
 #define MMENU_TITLE_FONT_PATH        "Resources/Fonts/whacky_joe"
 #define MMENU_BTN_FONT_PATH          "Resources/Fonts/whacky_joe"      
-#define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/pixel8"      
+#define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/whacky_joe"      
+
+#define MMENU_SCROLL_LAG          4 //divisor
+#define MMENU_SCROLL_PAST         (PLAYDATE_SCREEN_HEIGHT/2)
+#define MMENU_CRANK_MOVE_DELTA    ToRadians32(30) //radians
+
 #define MMENU_BTN_SPACING            10 //px
 #define MMENU_BTN_HORIZONTAL_PADDING 15 //px
 #define MMENU_BTN_VERTICAL_PADDING   8 //px
+#define MMENU_BTN_TOP_BOTTOM_MARGIN  10 //px
 
-#define MMENU_LEVEL_BTN_SPACING            1 //px
-#define MMENU_LEVEL_BTN_HORIZONTAL_PADDING 20 //px
-#define MMENU_LEVEL_BTN_VERTICAL_PADDING   4 //px
+#define MMENU_LEVEL_BTN_SPACING            3 //px
+#define MMENU_LEVEL_BTN_HORIZONTAL_PADDING 60 //px
+#define MMENU_LEVEL_BTN_VERTICAL_PADDING   8 //px
+
 
 enum MMenuAction_t
 {
@@ -84,6 +91,11 @@ struct MainMenuState_t
 	i64 oldSelectionIndices[MMenuSubMenu_NumSubMenus];
 	i64 selectionIndex;
 	VarArray_t buttons; //MMenuBtn_t
+	
+	r32 scroll;
+	r32 scrollGoto;
+	r32 scrollMax;
+	r32 crankAngleRef;
 	
 	reci titleRec;
 	reci buttonListRec;

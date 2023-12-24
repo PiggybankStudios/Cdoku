@@ -93,7 +93,7 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 				WriteLine_E("Failed to enumerate level files!");
 			}
 			
-			AddButtonMainMenu(MMenuAction_Back, NewStr("BACK"));
+			// AddButtonMainMenu(MMenuAction_Back, NewStr("BACK"));
 			
 			FreeScratchArena(scratch);
 		} break;
@@ -116,7 +116,25 @@ void PlaceButtonsListMainMenu()
 	}
 	mmenu->buttonListRec.size = totalListSize;
 	mmenu->buttonListRec.x = ScreenSize.width/2 - mmenu->buttonListRec.width/2;
-	mmenu->buttonListRec.y = (ScreenSize.height + (mmenu->titleRec.y + mmenu->titleRec.height)) / 2 - (mmenu->buttonListRec.height/2);
+	if (mmenu->subMenu == MMenuSubMenu_None)
+	{
+		mmenu->buttonListRec.y = (ScreenSize.height + (mmenu->titleRec.y + mmenu->titleRec.height)) / 2;
+	}
+	else
+	{
+		mmenu->buttonListRec.y = ScreenSize.height / 2;
+	}
+	mmenu->buttonListRec.y = mmenu->buttonListRec.y - (mmenu->buttonListRec.height/2);
+	if (mmenu->buttonListRec.y < MMENU_BTN_TOP_BOTTOM_MARGIN)
+	{
+		mmenu->buttonListRec.y = MMENU_BTN_TOP_BOTTOM_MARGIN;
+		mmenu->scrollMax = (r32)((mmenu->buttonListRec.y + mmenu->buttonListRec.height + MMENU_BTN_TOP_BOTTOM_MARGIN) - ScreenSize.height);
+		if (mmenu->scrollMax < 0) { mmenu->scrollMax = 0; }
+	}
+	else
+	{
+		mmenu->scrollMax = 0;
+	}
 }
 void MainMenuGotoSubMenu(MMenuSubMenu_t newSubMenu)
 {
@@ -164,6 +182,8 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 	
 	MainMenuGenerateButtons(mmenu->subMenu);
 	PlaceButtonsListMainMenu();
+	
+	mmenu->crankAngleRef = ToRadians32(input->crankAngle);
 }
 
 // +--------------------------------------------------------------+
@@ -187,6 +207,9 @@ void UpdateAppState_MainMenu()
 {
 	MemArena_t* scratch = GetScratchArena();
 	
+	// +==============================+
+	// |     Btn_A Selects Button     |
+	// +==============================+
 	if (BtnPressed(Btn_A))
 	{
 		HandleBtnExtended(Btn_A);
@@ -233,13 +256,27 @@ void UpdateAppState_MainMenu()
 	}
 	
 	// +==============================+
+	// |    Btn_B Leaves Sub-Menu     |
+	// +==============================+
+	if (BtnPressed(Btn_B))
+	{
+		HandleBtnExtended(Btn_B);
+		if (mmenu->subMenu != MMenuSubMenu_None)
+		{
+			MainMenuGotoSubMenu(MMenuSubMenu_None);
+		}
+	}
+	
+	// +==============================+
 	// |        Handle Up/Down        |
 	// +==============================+
+	bool selectionChanged = false;
 	if (BtnPressed(Btn_Up))
 	{
 		HandleBtnExtended(Btn_Up);
 		if (mmenu->buttons.length > 0)
 		{
+			selectionChanged = true;
 			if (mmenu->selectionIndex < 0)
 			{
 				mmenu->selectionIndex = 0;
@@ -258,6 +295,7 @@ void UpdateAppState_MainMenu()
 		HandleBtnExtended(Btn_Down);
 		if (mmenu->buttons.length > 0)
 		{
+			selectionChanged = true;
 			if (mmenu->selectionIndex < 0)
 			{
 				mmenu->selectionIndex = 0;
@@ -270,6 +308,77 @@ void UpdateAppState_MainMenu()
 			//TODO: Play a sound effect
 		}
 		else { mmenu->selectionIndex = -1; }
+	}
+	
+	// +==============================+
+	// |         Handle Crank         |
+	// +==============================+
+	r32 crankDiff = AngleDiffR32(ToRadians32(input->crankAngle), mmenu->crankAngleRef);
+	if (AbsR32(crankDiff) >= MMENU_CRANK_MOVE_DELTA)
+	{
+		i32 numMoves = (i32)(crankDiff / MMENU_CRANK_MOVE_DELTA);
+		mmenu->crankAngleRef += (r32)numMoves * MMENU_CRANK_MOVE_DELTA;
+		mmenu->crankAngleRef = AngleFixR32(mmenu->crankAngleRef);
+		
+		if (mmenu->buttons.length > 0)
+		{
+			selectionChanged = true;
+			if (mmenu->selectionIndex < 0)
+			{
+				mmenu->selectionIndex = 0;
+			}
+			else
+			{
+				for (i32 mIndex = 0; mIndex < AbsI32(numMoves); mIndex++)
+				{
+					if (numMoves >= 0)
+					{
+						mmenu->selectionIndex++;
+						if ((u64)mmenu->selectionIndex >= mmenu->buttons.length) { mmenu->selectionIndex = 0; }
+					}
+					else
+					{
+						mmenu->selectionIndex--;
+						if (mmenu->selectionIndex < 0) { mmenu->selectionIndex = mmenu->buttons.length-1; }
+					}
+				}
+			}
+			//TODO: Play a sound effect
+	}
+	}
+	
+	// +==============================+
+	// |    Scroll to Selected Btn    |
+	// +==============================+
+	if (mmenu->selectionIndex >= 0 && selectionChanged)
+	{
+		MMenuBtn_t* selectedBtn = VarArrayGetHard(&mmenu->buttons, (u64)mmenu->selectionIndex, MMenuBtn_t);
+		mmenu->scrollGoto = (r32)selectedBtn->mainRec.y + (r32)selectedBtn->mainRec.height/2 - (r32)ScreenSize.height/2;
+		// r32 selectedBtnScrollTop = (r32)selectedBtn->mainRec.y;
+		// r32 selectedBtnScrollBottom = (r32)((selectedBtn->mainRec.y + selectedBtn->mainRec.height) - ScreenSize.height);
+		// if (mmenu->scrollGoto < selectedBtnScrollBottom)
+		// {
+		// 	mmenu->scrollGoto = selectedBtnScrollBottom + MMENU_SCROLL_PAST;
+		// }
+		// else if (mmenu->scrollGoto > selectedBtnScrollTop)
+		// {
+		// 	mmenu->scrollGoto = selectedBtnScrollTop - MMENU_SCROLL_PAST;
+		// }
+	}
+	
+	// +==============================+
+	// |       Update Scrolling       |
+	// +==============================+
+	mmenu->scroll = ClampR32(mmenu->scroll, 0, mmenu->scrollMax);
+	mmenu->scrollGoto = ClampR32(mmenu->scrollGoto, 0, mmenu->scrollMax);
+	r32 scrollDelta = mmenu->scrollGoto - mmenu->scroll;
+	if (AbsR32(scrollDelta) > 1.0f)
+	{
+		mmenu->scroll += scrollDelta / MMENU_SCROLL_LAG;
+	}
+	else
+	{
+		mmenu->scroll = mmenu->scrollGoto;
 	}
 	
 	FreeScratchArena(scratch);
@@ -297,7 +406,7 @@ void RenderAppState_MainMenu(bool isOnTop)
 	VarArrayLoop(&mmenu->buttons, bIndex)
 	{
 		VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
-		reci mainRec = button->mainRec + mmenu->buttonListRec.topLeft;
+		reci mainRec = button->mainRec + mmenu->buttonListRec.topLeft + NewVec2i(0, RoundR32i(-mmenu->scroll));
 		Font_t* font = ((button->action == MMenuAction_Level) ? &mmenu->levelBtnFont : &mmenu->buttonFont);
 		
 		PdDrawRec(mainRec, kColorWhite);
@@ -330,6 +439,10 @@ void RenderAppState_MainMenu(bool isOnTop)
 		PdDrawTextPrint(textPos, "Game: v%u.%u(%03u)", GAME_VERSION_MAJOR, GAME_VERSION_MINOR, GAME_VERSION_BUILD);
 		textPos.y += stepY;
 		PdDrawTextPrint(textPos, "Engine: v%u.%u(%03u)", PIG_VERSION_MAJOR, PIG_VERSION_MINOR, PIG_VERSION_BUILD);
+		textPos.y += stepY;
+		PdDrawTextPrint(textPos, "Scroll: %g (%g, max %g)", (r64)mmenu->scroll, (r64)mmenu->scrollGoto, (r64)mmenu->scrollMax);
+		textPos.y += stepY;
+		PdDrawTextPrint(textPos, "Crank: %g %g", (r64)input->crankAngle, (r64)ToDegrees32(mmenu->crankAngleRef));
 		textPos.y += stepY;
 		
 		PdSetDrawMode(oldDrawMode);
