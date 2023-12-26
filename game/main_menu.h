@@ -11,6 +11,10 @@ Date:   12\19\2023
 #define MMENU_BTN_FONT_PATH          "Resources/Fonts/whacky_joe"      
 #define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/whacky_joe"      
 
+// NOTE: Every frame we will check for 3 level btn's save files (3-6ms of work each)
+// which should keep us running at a solid 30fps
+#define MMENU_NUM_SAVE_FILE_CHECKS_PER_FRAME  3 //DoesFileExist calls
+
 #define MMENU_SCROLL_LAG          4 //divisor
 #define MMENU_SCROLL_PAST         (PLAYDATE_SCREEN_HEIGHT/2)
 #define MMENU_CRANK_MOVE_DELTA    ToRadians32(30) //radians
@@ -72,6 +76,7 @@ struct MMenuBtn_t
 	MMenuAction_t action;
 	MyStr_t displayText;
 	MyStr_t referencePath;
+	bool checkedForSaveFiles;
 	bool isCompleted;
 	bool hasSaveFile;
 	
@@ -92,6 +97,7 @@ struct MainMenuState_t
 	MMenuSubMenu_t subMenu;
 	i64 oldSelectionIndices[MMenuSubMenu_NumSubMenus];
 	i64 selectionIndex;
+	u64 numSaveFilesUnchecked;
 	VarArray_t buttons; //MMenuBtn_t
 	
 	bool scrollToSelection;

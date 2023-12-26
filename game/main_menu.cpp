@@ -53,6 +53,9 @@ MMenuBtn_t* AddButtonMainMenu(MMenuAction_t action, MyStr_t displayText, MyStr_t
 void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 {
 	ClearButtonsMainMenu();
+	mmenu->numSaveFilesUnchecked = 0;
+	u8 totalTimer = StartPerfTime();
+	
 	switch (subMenu)
 	{
 		case MMenuSubMenu_None:
@@ -66,10 +69,12 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 		{
 			MemArena_t* scratch = GetScratchArena();
 			
+			u8 getFilesTimer = StartPerfTime();
 			FilesInDir_t levelFiles = GetFilesInDirectory(NewStr("Resources/Text"), scratch, false);
+			u64 getFilesTime = EndPerfTime(getFilesTimer);
 			if (levelFiles.success)
 			{
-				PrintLine_D("There are %llu levels! (allocation %llu %p)", levelFiles.count, levelFiles.mainAllocation.length, levelFiles.mainAllocation.pntr);
+				PrintLine_D("There are %llu levels! (time=" PERF_FORMAT_STR " allocation=%llub)", levelFiles.count, PERF_FORMAT(getFilesTime), levelFiles.mainAllocation.length);
 				#if 0
 				for (u64 fIndex = 0; fIndex < levelFiles.count; fIndex++)
 				{
@@ -77,22 +82,21 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 				}
 				#endif
 				
+				u8 genFileBtnsTimer = StartPerfTime();
 				for (u64 fIndex = 0; fIndex < levelFiles.count; fIndex++)
 				{
 					PushMemMark(scratch);
 					MyStr_t levelPath = levelFiles.paths[fIndex];
 					MyStr_t levelName = GetFileNamePart(levelPath, false);
-					MyStr_t completedPath = GetLevelSaveFilePath(scratch, levelPath, true);
-					MyStr_t savePath = GetLevelSaveFilePath(scratch, levelPath, false);
-					bool isCompleted = DoesFileExist(true, completedPath);
-					bool hasSaveFile = (isCompleted || DoesFileExist(true, savePath));
 					MyStr_t displayText = PrintInArenaStr(scratch, "%.*s", StrPrint(levelName));
 					for (u64 cIndex = 0; cIndex < displayText.length; cIndex++) { displayText.chars[cIndex] = GetUppercaseAnsiiChar(displayText.chars[cIndex]); }
 					MMenuBtn_t* newBtn = AddButtonMainMenu(MMenuAction_Level, displayText, levelPath);
-					newBtn->isCompleted = isCompleted;
-					newBtn->hasSaveFile = hasSaveFile;
+					newBtn->checkedForSaveFiles = false;
+					mmenu->numSaveFilesUnchecked++;
 					PopMemMark(scratch);
 				}
+				u64 genFileBtnsTime = EndPerfTime(genFileBtnsTimer);
+				PrintLine_D("File Btns generated (time=" PERF_FORMAT_STR ")", PERF_FORMAT(genFileBtnsTime));
 			}
 			else
 			{
@@ -107,7 +111,8 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 		default: AddButtonMainMenu(MMenuAction_Exit, NewStr("EXIT")); break;
 	}
 	
-	PrintLine_D("The %s sub-menu contains %llu buttons", GetMMenuSubMenuStr(subMenu), mmenu->buttons.length); //TODO: Remove me!
+	u64 totalTime = EndPerfTime(totalTimer);
+	PrintLine_D("The %s sub-menu contains %llu buttons (" PERF_FORMAT_STR ")", GetMMenuSubMenuStr(subMenu), mmenu->buttons.length, PERF_FORMAT(totalTime));
 }
 void PlaceButtonsListMainMenu()
 {
@@ -156,6 +161,64 @@ void MainMenuGotoSubMenu(MMenuSubMenu_t newSubMenu)
 	mmenu->jumpToSelection = true;
 }
 
+void MainMenuCheckForSaveFileForBtn(MMenuBtn_t* button)
+{
+	if (!button->checkedForSaveFiles)
+	{
+		MemArena_t* scratch = GetScratchArena();
+		MyStr_t completedPath = GetLevelSaveFilePath(scratch, button->referencePath, true);
+		MyStr_t savePath = GetLevelSaveFilePath(scratch, button->referencePath, false);
+		button->isCompleted = DoesFileExist(true, completedPath);
+		button->hasSaveFile = (button->isCompleted || DoesFileExist(true, savePath));
+		button->checkedForSaveFiles = true;
+		Decrement(mmenu->numSaveFilesUnchecked);
+		FreeScratchArena(scratch);
+	}
+}
+
+void MainMenuMoveSelectionUp()
+{
+	if (mmenu->buttons.length > 0)
+	{
+		if (mmenu->selectionIndex < 0)
+		{
+			mmenu->selectionIndex = 0;
+		}
+		else
+		{
+			mmenu->selectionIndex--;
+			if (mmenu->selectionIndex < 0)
+			{
+				if (mmenu->buttons.length <= 15) { mmenu->selectionIndex = (i64)(mmenu->buttons.length-1); }
+				else { mmenu->selectionIndex = 0; }
+			}
+		}
+		//TODO: Play a sound effect
+	}
+	else { mmenu->selectionIndex = -1; }
+}
+void MainMenuMoveSelectionDown()
+{
+	if (mmenu->buttons.length > 0)
+	{
+		if (mmenu->selectionIndex < 0)
+		{
+			mmenu->selectionIndex = 0;
+		}
+		else
+		{
+			mmenu->selectionIndex++;
+			if ((u64)mmenu->selectionIndex >= mmenu->buttons.length)
+			{
+				if (mmenu->buttons.length <= 15) { mmenu->selectionIndex = 0; }
+				else { mmenu->selectionIndex = (i64)(mmenu->buttons.length-1); }
+			}
+		}
+		//TODO: Play a sound effect
+	}
+	else { mmenu->selectionIndex = -1; }
+}
+
 // +--------------------------------------------------------------+
 // |                            Start                             |
 // +--------------------------------------------------------------+
@@ -182,13 +245,41 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 		
 		CreateVarArray(&mmenu->buttons, mainHeap, sizeof(MMenuBtn_t));
 		
+		MemArena_t* scratch = GetScratchArena();
+		FilesInDir_t baseFiles = GetFilesInDirectory(NewStr(""), scratch, true);
+		PrintLine_D("There are %llu files in the base folder:", baseFiles.count);
+		for (u64 fIndex = 0; fIndex < baseFiles.count; fIndex++)
+		{
+			u64 numFiles = 0;
+			if (StrEndsWith(baseFiles.paths[fIndex], "/"))
+			{
+				FilesInDir_t innerFiles = GetFilesInDirectory(baseFiles.paths[fIndex], scratch, true);
+				numFiles = innerFiles.count;
+			}
+			PrintLine_D("[%llu]: %.*s (%llu file%s)", fIndex, StrPrint(baseFiles.paths[fIndex]), numFiles, (numFiles == 0) ? "" : "s");
+		}
+		FreeScratchArena(scratch);
+		
 		mmenu->selectionIndex = 0;
+		MainMenuGenerateButtons(mmenu->subMenu);
+		PlaceButtonsListMainMenu();
 		
 		mmenu->initialized = true;
 	}
+	else
+	{
+		// Upon returning to the level select screen from playing a level, we need to recheck which save files exist
+		VarArrayLoop(&mmenu->buttons, bIndex)
+		{
+			VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+			if (button->action == MMenuAction_Level && button->checkedForSaveFiles)
+			{
+				button->checkedForSaveFiles = false;
+				mmenu->numSaveFilesUnchecked++;
+			}
+		}
+	}
 	
-	MainMenuGenerateButtons(mmenu->subMenu);
-	PlaceButtonsListMainMenu();
 	mmenu->jumpToSelection = true;
 	
 	mmenu->crankAngleRef = ToRadians32(input->crankAngle);
@@ -281,40 +372,14 @@ void UpdateAppState_MainMenu()
 	if (BtnPressed(Btn_Up))
 	{
 		HandleBtnExtended(Btn_Up);
-		if (mmenu->buttons.length > 0)
-		{
-			mmenu->scrollToSelection = true;
-			if (mmenu->selectionIndex < 0)
-			{
-				mmenu->selectionIndex = 0;
-			}
-			else
-			{
-				mmenu->selectionIndex--;
-				if (mmenu->selectionIndex < 0) { mmenu->selectionIndex = mmenu->buttons.length-1; }
-			}
-			//TODO: Play a sound effect
-		}
-		else { mmenu->selectionIndex = -1; }
+		MainMenuMoveSelectionUp();
+		mmenu->scrollToSelection = true;
 	}
 	if (BtnPressed(Btn_Down))
 	{
 		HandleBtnExtended(Btn_Down);
-		if (mmenu->buttons.length > 0)
-		{
-			mmenu->scrollToSelection = true;
-			if (mmenu->selectionIndex < 0)
-			{
-				mmenu->selectionIndex = 0;
-			}
-			else
-			{
-				mmenu->selectionIndex++;
-				if ((u64)mmenu->selectionIndex >= mmenu->buttons.length) { mmenu->selectionIndex = 0; }
-			}
-			//TODO: Play a sound effect
-		}
-		else { mmenu->selectionIndex = -1; }
+		MainMenuMoveSelectionDown();
+		mmenu->scrollToSelection = true;
 	}
 	
 	// +==============================+
@@ -327,31 +392,12 @@ void UpdateAppState_MainMenu()
 		mmenu->crankAngleRef += (r32)numMoves * MMENU_CRANK_MOVE_DELTA;
 		mmenu->crankAngleRef = AngleFixR32(mmenu->crankAngleRef);
 		
-		if (mmenu->buttons.length > 0)
+		mmenu->scrollToSelection = true;
+		for (i32 mIndex = 0; mIndex < AbsI32(numMoves); mIndex++)
 		{
-			mmenu->scrollToSelection = true;
-			if (mmenu->selectionIndex < 0)
-			{
-				mmenu->selectionIndex = 0;
-			}
-			else
-			{
-				for (i32 mIndex = 0; mIndex < AbsI32(numMoves); mIndex++)
-				{
-					if (numMoves >= 0)
-					{
-						mmenu->selectionIndex++;
-						if ((u64)mmenu->selectionIndex >= mmenu->buttons.length) { mmenu->selectionIndex = 0; }
-					}
-					else
-					{
-						mmenu->selectionIndex--;
-						if (mmenu->selectionIndex < 0) { mmenu->selectionIndex = mmenu->buttons.length-1; }
-					}
-				}
-			}
-			//TODO: Play a sound effect
-	}
+			if (numMoves >= 0) { MainMenuMoveSelectionDown(); }
+			else { MainMenuMoveSelectionUp(); }
+		}
 	}
 	
 	// +==============================+
@@ -388,6 +434,24 @@ void UpdateAppState_MainMenu()
 		mmenu->scroll = mmenu->scrollGoto;
 	}
 	
+	// +==============================+
+	// |     Check for Save Files     |
+	// +==============================+
+	if (mmenu->numSaveFilesUnchecked > 0)
+	{
+		u64 numChecks = 0;
+		VarArrayLoop(&mmenu->buttons, bIndex)
+		{
+			VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+			if (button->action == MMenuAction_Level && !button->checkedForSaveFiles)
+			{
+				MainMenuCheckForSaveFileForBtn(button);
+				numChecks++;
+				if (numChecks >= MMENU_NUM_SAVE_FILE_CHECKS_PER_FRAME) { break; }
+			}
+		}
+	}
+	
 	mmenu->scrollToSelection = false;
 	mmenu->jumpToSelection = false;
 	FreeScratchArena(scratch);
@@ -403,6 +467,9 @@ void RenderAppState_MainMenu(bool isOnTop)
 	pd->graphics->clear(kColorWhite);
 	PdSetDrawMode(kDrawModeCopy);
 	
+	// +==============================+
+	// |         Render Title         |
+	// +==============================+
 	if (mmenu->subMenu == MMenuSubMenu_None)
 	{
 		PdBindFont(&mmenu->titleFont);
@@ -416,44 +483,69 @@ void RenderAppState_MainMenu(bool isOnTop)
 	{
 		VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
 		reci mainRec = button->mainRec + mmenu->buttonListRec.topLeft + NewVec2i(0, RoundR32i(-mmenu->scroll));
-		Font_t* font = ((button->action == MMenuAction_Level) ? &mmenu->levelBtnFont : &mmenu->buttonFont);
-		MyStr_t displayText = button->displayText;
-		
-		if (button->isCompleted)
+		if (RecisIntersect(mainRec, ScreenRec))
 		{
-			PdDrawRec(mainRec, kColorBlack);
-			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
-		}
-		else if (button->hasSaveFile)
-		{
-			displayText = PrintInArenaStr(scratch, "%.*s*", StrPrint(displayText));
-			PdDrawTexturedRecPart(gl->ditherTexture, mainRec, NewReci(0, 0, mainRec.size));
-			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
-		}
-		else
-		{
-			PdDrawRec(mainRec, kColorWhite);
-			PdDrawRecOutline(mainRec, 2, false, kColorBlack);
-		}
-		
-		v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
-		PdBindFont(font);
-		LCDBitmapDrawMode oldDrawMode = kDrawModeCopy;
-		if (button->isCompleted) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
-		PdDrawText(displayText, displayTextPos);
-		if (button->isCompleted) { PdSetDrawMode(oldDrawMode); }
-		
-		if (mmenu->selectionIndex >= 0 && (u64)mmenu->selectionIndex == bIndex)
-		{
-			reci handRec;
-			handRec.size = mmenu->handSheet.frameSize;
-			handRec.x = mainRec.x - handRec.width + 2;
-			handRec.y = mainRec.y + mainRec.height/2 - handRec.height/2;
-			handRec.x += RoundR32i(Oscillate(-3, 1, 1000));
-			PdDrawSheetFrame(mmenu->handSheet, NewVec2i(0, 0), handRec);
+			Font_t* font = ((button->action == MMenuAction_Level) ? &mmenu->levelBtnFont : &mmenu->buttonFont);
+			MyStr_t displayText = button->displayText;
+			
+			if (!button->checkedForSaveFiles)
+			{
+				MainMenuCheckForSaveFileForBtn(button);
+			}
+			
+			if (button->isCompleted)
+			{
+				PdDrawRec(mainRec, kColorBlack);
+				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+			}
+			else if (button->hasSaveFile)
+			{
+				displayText = PrintInArenaStr(scratch, "%.*s*", StrPrint(displayText));
+				PdDrawTexturedRecPart(gl->ditherTexture, mainRec, NewReci(0, 0, mainRec.size));
+				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+			}
+			else
+			{
+				PdDrawRec(mainRec, kColorWhite);
+				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+			}
+			
+			v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
+			PdBindFont(font);
+			LCDBitmapDrawMode oldDrawMode = kDrawModeCopy;
+			if (button->isCompleted) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
+			PdDrawText(displayText, displayTextPos);
+			if (button->isCompleted) { PdSetDrawMode(oldDrawMode); }
+			
+			if (mmenu->selectionIndex >= 0 && (u64)mmenu->selectionIndex == bIndex)
+			{
+				reci handRec;
+				handRec.size = mmenu->handSheet.frameSize;
+				handRec.x = mainRec.x - handRec.width + 2;
+				handRec.y = mainRec.y + mainRec.height/2 - handRec.height/2;
+				handRec.x += RoundR32i(Oscillate(-3, 1, 1000));
+				PdDrawSheetFrame(mmenu->handSheet, NewVec2i(0, 0), handRec);
+			}
 		}
 	}
 	
+	// +==============================+
+	// |     Render Loading Text      |
+	// +==============================+
+	if (mmenu->numSaveFilesUnchecked > 0)
+	{
+		PdBindFont(&mmenu->buttonFont); //TODO: Change this font?
+		v2i loadingTextPos = NewVec2i(5, ScreenSize.height - 5 - mmenu->buttonFont.lineHeight);
+		#if DEBUG_BUILD
+		PdDrawTextPrint(loadingTextPos, "Loading %llu/%llu", mmenu->buttons.length - mmenu->numSaveFilesUnchecked, mmenu->buttons.length);
+		#else
+		PdDrawText("Loading...", loadingTextPos);
+		#endif
+	}
+	
+	// +==============================+
+	// |      Render Debug Info       |
+	// +==============================+
 	if (pig->debugEnabled)
 	{
 		LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
