@@ -7,7 +7,7 @@ Date:   12\19\2023
 #ifndef _MAIN_MENU_H
 #define _MAIN_MENU_H
 
-#define MMENU_TITLE_FONT_PATH        "Resources/Fonts/whacky_joe"
+#define MMENU_TITLE_FONT_PATH        "Resources/Fonts/party_pack_squares"
 #define MMENU_BTN_FONT_PATH          "Resources/Fonts/whacky_joe"      
 #define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/whacky_joe"      
 

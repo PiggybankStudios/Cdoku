@@ -1,8 +1,8 @@
 @echo off
 
 rem The "Safe" name doesn't have spaces or invalid characters and also doesn't change for Demo vs non-Demo
-set ProjectName=Pig Sudoku
-set ProjectNameSafe=PigSudoku
+set ProjectName=C-doku
+set ProjectNameSafe=Cdoku
 
 set DebugBuild=1
 set DeveloperBuild=1
