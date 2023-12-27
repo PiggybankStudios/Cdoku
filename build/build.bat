@@ -4,8 +4,8 @@ rem The "Safe" name doesn't have spaces or invalid characters and also doesn't c
 set ProjectName=C-doku
 set ProjectNameSafe=Cdoku
 
-set DebugBuild=1
-set DeveloperBuild=1
+set DebugBuild=0
+set DeveloperBuild=0
 set SimulatorBuild=1
 set BuildBoth=1
 set DemoBuild=0
