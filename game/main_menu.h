@@ -7,7 +7,7 @@ Date:   12\19\2023
 #ifndef _MAIN_MENU_H
 #define _MAIN_MENU_H
 
-#define MMENU_TITLE_FONT_PATH        "Resources/Fonts/party_pack_squares"
+#define MMENU_TITLE_FONT_PATH        "Resources/Fonts/SunnySpellsReduced"
 #define MMENU_BTN_FONT_PATH          "Resources/Fonts/whacky_joe"      
 #define MMENU_LEVEL_BTN_FONT_PATH    "Resources/Fonts/whacky_joe"      
 
@@ -20,14 +20,15 @@ Date:   12\19\2023
 #define MMENU_CRANK_MOVE_DELTA    ToRadians32(30) //radians
 
 #define MMENU_BTN_SPACING            10 //px
-#define MMENU_BTN_HORIZONTAL_PADDING 15 //px
-#define MMENU_BTN_VERTICAL_PADDING   8 //px
+#define MMENU_BTN_HORIZONTAL_PADDING 10 //px
+#define MMENU_BTN_VERTICAL_PADDING   4 //px
 #define MMENU_BTN_TOP_BOTTOM_MARGIN  10 //px
 
 #define MMENU_LEVEL_BTN_SPACING            3 //px
 #define MMENU_LEVEL_BTN_HORIZONTAL_PADDING 60 //px
 #define MMENU_LEVEL_BTN_VERTICAL_PADDING   8 //px
 
+#define MMENU_BTN_SELECT_ANIM_TIME   200 //ms
 
 enum MMenuAction_t
 {
@@ -79,6 +80,7 @@ struct MMenuBtn_t
 	bool checkedForSaveFiles;
 	bool isCompleted;
 	bool hasSaveFile;
+	r32 selectedAnim;
 	
 	reci mainRec;
 	v2i displayTextSize;
@@ -90,9 +92,12 @@ struct MainMenuState_t
 	bool initialized;
 	
 	SpriteSheet_t handSheet;
+	SpriteSheet_t btnCornersSheet;
 	Font_t titleFont;
 	Font_t buttonFont;
 	Font_t levelBtnFont;
+	Texture_t titleSprite;
+	Texture_t bottomDitherSprite;
 	
 	MMenuSubMenu_t subMenu;
 	i64 oldSelectionIndices[MMenuSubMenu_NumSubMenus];

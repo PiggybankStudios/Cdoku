@@ -60,9 +60,9 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 	{
 		case MMenuSubMenu_None:
 		{
-			AddButtonMainMenu(MMenuAction_Play,     NewStr("PLAY"));
+			AddButtonMainMenu(MMenuAction_Play,     NewStr("PUZZLES"));
 			AddButtonMainMenu(MMenuAction_Settings, NewStr("SETTINGS"));
-			AddButtonMainMenu(MMenuAction_Exit,     NewStr("EXIT"));
+			// AddButtonMainMenu(MMenuAction_Exit,     NewStr("EXIT"));
 		} break;
 		
 		case MMenuSubMenu_LevelSelect:
@@ -219,6 +219,17 @@ void MainMenuMoveSelectionDown()
 	else { mmenu->selectionIndex = -1; }
 }
 
+void MainMenuRenderFancyBtn(reci drawRec)
+{
+	v2i cornerSize = mmenu->btnCornersSheet.frameSize;
+	PdDrawSheetFrame(mmenu->btnCornersSheet, NewVec2i(0, 0), NewReci(drawRec.topLeft, cornerSize));
+	PdDrawSheetFrame(mmenu->btnCornersSheet, NewVec2i(0, 1), NewReci(drawRec.x, drawRec.y + drawRec.height - cornerSize.height, cornerSize));
+	PdDrawSheetFrame(mmenu->btnCornersSheet, NewVec2i(1, 0), NewReci(drawRec.x + drawRec.width - cornerSize.width, drawRec.y, cornerSize));
+	PdDrawSheetFrame(mmenu->btnCornersSheet, NewVec2i(1, 1), NewReci(drawRec.x + drawRec.width - cornerSize.width, drawRec.y + drawRec.height - cornerSize.height, cornerSize));
+	PdDrawRec(NewReci(drawRec.x + cornerSize.width, drawRec.y, drawRec.width - 2*cornerSize.width, drawRec.height), kColorBlack);
+	PdDrawRec(NewReci(drawRec.x, drawRec.y + cornerSize.height, drawRec.width, drawRec.height - 2*cornerSize.height), kColorBlack);
+}
+
 // +--------------------------------------------------------------+
 // |                            Start                             |
 // +--------------------------------------------------------------+
@@ -229,6 +240,9 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 		mmenu->handSheet = LoadSpriteSheet(NewStr("Resources/Sheets/hand"), 1);
 		Assert(mmenu->handSheet.isValid);
 		
+		mmenu->btnCornersSheet = LoadSpriteSheet(NewStr("Resources/Sheets/button_corners"), 2);
+		Assert(mmenu->btnCornersSheet.isValid);
+		
 		mmenu->titleFont = LoadFont(NewStr(MMENU_TITLE_FONT_PATH));
 		Assert(mmenu->titleFont.isValid);
 		
@@ -238,13 +252,21 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 		mmenu->levelBtnFont = LoadFont(NewStr(MMENU_LEVEL_BTN_FONT_PATH));
 		Assert(mmenu->levelBtnFont.isValid);
 		
-		mmenu->titleRec.size = MeasureText(mmenu->titleFont.font, NewStr(PROJECT_NAME));
+		mmenu->titleSprite = LoadTexture(NewStr("Resources/Sprites/title_text"));
+		Assert(mmenu->titleSprite.isValid);
+		
+		mmenu->bottomDitherSprite = LoadTexture(NewStr("Resources/Textures/title_bottom_dither"));
+		Assert(mmenu->bottomDitherSprite.isValid);
+		
+		mmenu->titleRec.size = MeasureText(mmenu->titleFont.font, NewStr("C-DOKU"));
+		// mmenu->titleRec.size = mmenu->titleSprite.size;
 		mmenu->titleRec.topLeft = NewVec2i(ScreenSize.width/2 - mmenu->titleRec.size.width/2, ScreenSize.height/4 - mmenu->titleRec.size.height/2);
 		
 		mmenu->subMenu = MMenuSubMenu_None;
 		
 		CreateVarArray(&mmenu->buttons, mainHeap, sizeof(MMenuBtn_t));
 		
+		#if 0
 		MemArena_t* scratch = GetScratchArena();
 		FilesInDir_t baseFiles = GetFilesInDirectory(NewStr(""), scratch, true);
 		PrintLine_D("There are %llu files in the base folder:", baseFiles.count);
@@ -259,6 +281,7 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 			PrintLine_D("[%llu]: %.*s (%llu file%s)", fIndex, StrPrint(baseFiles.paths[fIndex]), numFiles, (numFiles == 0) ? "" : "s");
 		}
 		FreeScratchArena(scratch);
+		#endif
 		
 		mmenu->selectionIndex = 0;
 		MainMenuGenerateButtons(mmenu->subMenu);
@@ -452,6 +475,22 @@ void UpdateAppState_MainMenu()
 		}
 	}
 	
+	// +==============================+
+	// |   Update Button Animations   |
+	// +==============================+
+	VarArrayLoop(&mmenu->buttons, bIndex)
+	{
+		VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+		if (mmenu->selectionIndex >= 0 && (u64)mmenu->selectionIndex == bIndex)
+		{
+			UpdateAnimationUp(&button->selectedAnim, MMENU_BTN_SELECT_ANIM_TIME);
+		}
+		else
+		{
+			UpdateAnimationDown(&button->selectedAnim, MMENU_BTN_SELECT_ANIM_TIME);
+		}
+	}
+	
 	mmenu->scrollToSelection = false;
 	mmenu->jumpToSelection = false;
 	FreeScratchArena(scratch);
@@ -472,8 +511,10 @@ void RenderAppState_MainMenu(bool isOnTop)
 	// +==============================+
 	if (mmenu->subMenu == MMenuSubMenu_None)
 	{
+		PdDrawTexturedRec(mmenu->bottomDitherSprite, NewReci(0, ScreenSize.height - mmenu->bottomDitherSprite.height, ScreenSize.width, mmenu->bottomDitherSprite.height));
 		PdBindFont(&mmenu->titleFont);
-		PdDrawText(NewStr(PROJECT_NAME), mmenu->titleRec.topLeft);
+		PdDrawText(NewStr("C-DOKU"), mmenu->titleRec.topLeft);
+		// PdDrawTexturedRec(mmenu->titleSprite, mmenu->titleRec);
 	}
 	
 	// +==============================+
@@ -485,8 +526,11 @@ void RenderAppState_MainMenu(bool isOnTop)
 		reci mainRec = button->mainRec + mmenu->buttonListRec.topLeft + NewVec2i(0, RoundR32i(-mmenu->scroll));
 		if (RecisIntersect(mainRec, ScreenRec))
 		{
-			Font_t* font = ((button->action == MMenuAction_Level) ? &mmenu->levelBtnFont : &mmenu->buttonFont);
+			bool isLevelBtn = (button->action == MMenuAction_Level);
+			Font_t* font = (isLevelBtn ? &mmenu->levelBtnFont : &mmenu->buttonFont);
 			MyStr_t displayText = button->displayText;
+			bool drawInvertedText = false;
+			v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
 			
 			if (!button->checkedForSaveFiles)
 			{
@@ -497,6 +541,7 @@ void RenderAppState_MainMenu(bool isOnTop)
 			{
 				PdDrawRec(mainRec, kColorBlack);
 				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
+				drawInvertedText = true;
 			}
 			else if (button->hasSaveFile)
 			{
@@ -504,18 +549,27 @@ void RenderAppState_MainMenu(bool isOnTop)
 				PdDrawTexturedRecPart(gl->ditherTexture, mainRec, NewReci(0, 0, mainRec.size));
 				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
 			}
-			else
+			else if (isLevelBtn)
 			{
 				PdDrawRec(mainRec, kColorWhite);
 				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
 			}
+			else
+			{
+				mainRec = ReciInflate(mainRec,
+					RoundR32i(LerpR32(0, mainRec.width*0.125f, EaseCubicOut(button->selectedAnim))),
+					RoundR32i(LerpR32(0, mainRec.height*0.125f, EaseCubicOut(button->selectedAnim)))
+				);
+				displayTextPos = mainRec.topLeft + NewVec2i(mainRec.width/2 - button->displayTextSize.width/2, mainRec.height/2 - button->displayTextSize.height/2);
+				MainMenuRenderFancyBtn(mainRec);
+				drawInvertedText = true;
+			}
 			
-			v2i displayTextPos = mainRec.topLeft + button->displayTextPos;
 			PdBindFont(font);
 			LCDBitmapDrawMode oldDrawMode = kDrawModeCopy;
-			if (button->isCompleted) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
+			if (drawInvertedText) { oldDrawMode = PdSetDrawMode(kDrawModeNXOR); }
 			PdDrawText(displayText, displayTextPos);
-			if (button->isCompleted) { PdSetDrawMode(oldDrawMode); }
+			if (drawInvertedText) { PdSetDrawMode(oldDrawMode); }
 			
 			if (mmenu->selectionIndex >= 0 && (u64)mmenu->selectionIndex == bIndex)
 			{
@@ -530,38 +584,34 @@ void RenderAppState_MainMenu(bool isOnTop)
 	}
 	
 	// +==============================+
-	// |     Render Loading Text      |
+	// |    Render Completed Text     |
 	// +==============================+
-	if (true)
 	{
-		PdBindFont(&mmenu->buttonFont); //TODO: Change this font?
+		PdBindFont(&mmenu->levelBtnFont); //TODO: Change this font?
 		MyStr_t loadingText = MyStr_Empty;
-		if (mmenu->numSaveFilesUnchecked > 0 && false)
+		#if 0
+		loadingText = PrintInArenaStr(scratch, "Loading %llu/%llu", mmenu->buttons.length - mmenu->numSaveFilesUnchecked, mmenu->buttons.length);
+		#else
+		u64 numCompletedLevels = 0;
+		u64 numLevelsTotal = 0;
+		VarArrayLoop(&mmenu->buttons, bIndex)
 		{
-			loadingText = PrintInArenaStr(scratch, "Loading %llu/%llu", mmenu->buttons.length - mmenu->numSaveFilesUnchecked, mmenu->buttons.length);
-		}
-		else
-		{
-			u64 numCompletedLevels = 0;
-			u64 numLevelsTotal = 0;
-			VarArrayLoop(&mmenu->buttons, bIndex)
+			VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+			if (button->action == MMenuAction_Level)
 			{
-				VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
-				if (button->action == MMenuAction_Level)
-				{
-					numLevelsTotal++;
-					if (button->isCompleted) { numCompletedLevels++; }
-				}
-			}
-			if (numLevelsTotal > 0)
-			{
-				loadingText = PrintInArenaStr(scratch, "Completed: %llu%s/%llu", numCompletedLevels, (mmenu->numSaveFilesUnchecked > 0) ? "*" : "", numLevelsTotal);
+				numLevelsTotal++;
+				if (button->isCompleted) { numCompletedLevels++; }
 			}
 		}
+		if (numLevelsTotal > 0)
+		{
+			loadingText = PrintInArenaStr(scratch, "Completed: %llu%s/%llu", numCompletedLevels, (mmenu->numSaveFilesUnchecked > 0) ? "*" : "", numLevelsTotal);
+		}
+		#endif
 		
 		if (!IsEmptyStr(loadingText))
 		{
-			v2i loadingTextSize = MeasureText(mmenu->buttonFont.font, loadingText);
+			v2i loadingTextSize = MeasureText(mmenu->levelBtnFont.font, loadingText);
 			
 			OffscreenTarget_t target = GetOffscreenTarget(loadingTextSize);
 			NotNull(target.pntr);
