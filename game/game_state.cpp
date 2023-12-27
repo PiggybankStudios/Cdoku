@@ -258,6 +258,15 @@ void UpdateAppState_Game()
 	}
 	#endif
 	
+	// +====================================================+
+	// | Btn_B Returns to Main Menu When Level is Complete  |
+	// +====================================================+
+	if (game->completed && BtnPressed(Btn_B))
+	{
+		HandleBtnExtended(Btn_B);
+		PopAppState();
+	}
+	
 	FreeScratchArena(scratch);
 }
 

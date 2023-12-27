@@ -532,15 +532,54 @@ void RenderAppState_MainMenu(bool isOnTop)
 	// +==============================+
 	// |     Render Loading Text      |
 	// +==============================+
-	if (mmenu->numSaveFilesUnchecked > 0)
+	if (true)
 	{
 		PdBindFont(&mmenu->buttonFont); //TODO: Change this font?
-		v2i loadingTextPos = NewVec2i(5, ScreenSize.height - 5 - mmenu->buttonFont.lineHeight);
-		#if DEBUG_BUILD
-		PdDrawTextPrint(loadingTextPos, "Loading %llu/%llu", mmenu->buttons.length - mmenu->numSaveFilesUnchecked, mmenu->buttons.length);
-		#else
-		PdDrawText("Loading...", loadingTextPos);
-		#endif
+		MyStr_t loadingText = MyStr_Empty;
+		if (mmenu->numSaveFilesUnchecked > 0 && false)
+		{
+			loadingText = PrintInArenaStr(scratch, "Loading %llu/%llu", mmenu->buttons.length - mmenu->numSaveFilesUnchecked, mmenu->buttons.length);
+		}
+		else
+		{
+			u64 numCompletedLevels = 0;
+			u64 numLevelsTotal = 0;
+			VarArrayLoop(&mmenu->buttons, bIndex)
+			{
+				VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+				if (button->action == MMenuAction_Level)
+				{
+					numLevelsTotal++;
+					if (button->isCompleted) { numCompletedLevels++; }
+				}
+			}
+			if (numLevelsTotal > 0)
+			{
+				loadingText = PrintInArenaStr(scratch, "Completed: %llu%s/%llu", numCompletedLevels, (mmenu->numSaveFilesUnchecked > 0) ? "*" : "", numLevelsTotal);
+			}
+		}
+		
+		if (!IsEmptyStr(loadingText))
+		{
+			v2i loadingTextSize = MeasureText(mmenu->buttonFont.font, loadingText);
+			
+			OffscreenTarget_t target = GetOffscreenTarget(loadingTextSize);
+			NotNull(target.pntr);
+			PdPushOffscreenTarget(target);
+			
+			PdDrawRec(NewReci(0, 0, loadingTextSize), kColorWhite);
+			PdDrawText(loadingText, Vec2i_Zero);
+			
+			PdPopOffscreenTarget(target);
+			
+			reci loadingTextDrawRec = NewReci(
+				ScreenSize.width - loadingTextSize.height,
+				ScreenSize.height/2 - loadingTextSize.width/2,
+				loadingTextSize.height,
+				loadingTextSize.width
+			);
+			PdDrawOffscreenResults(target, loadingTextDrawRec, Dir2_Up);
+		}
 	}
 	
 	// +==============================+
