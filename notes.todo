@@ -1,6 +1,18 @@
 
 # TODO List:
-	[ ] 
+	[x] Make the game run at 50fps
+	[ ] Track last played level and add a "Continue" button to main menu
+	[ ] Add a settings menu with checkboxes and combo boxes
+	[ ] Highlight notes of same number
+	[ ] Separate levels by difficulty (folders?)
+	[ ] Hold A to place only acceptable number
+	[ ] Hold B to Undo
+	[ ] Button hints at bottom of screen
+	[ ] Hold B to clear save of level
+	[ ] Add sound effects
+	[ ] Add music
+	[?] Draw arbitrary dither patterns
+	[?] fillRect instead of drawRect?
 
 # Ideas for Options
 	[ ] Different fonts
@@ -12,5 +24,526 @@
 		@ Default
 		@ Crank to select number, a to place, b to toggle note
 	[ ] Grey out completed numbers
+
+# API Functions
+	@ System
+		[x] realloc
+		[x] formatString
+		[x] logToConsole
+		[x] error
+		[x] getLanguage
+		[x] getCurrentTimeMilliseconds
+		[x] getSecondsSinceEpoch
+		[x] drawFPS
+		[x] setUpdateCallback
+		[x] getButtonState
+		[x] setPeripheralsEnabled
+		[x] getAccelerometer
+		[-] getCrankChange
+		[x] getCrankAngle
+		[x] isCrankDocked
+		[ ] setCrankSoundsDisabled
+		[ ] getFlipped
+		[ ] setAutoLockDisabled
+		[ ] setMenuImage
+		[x] addMenuItem
+		[x] addCheckmarkMenuItem
+		[x] addOptionsMenuItem
+		[x] removeAllMenuItems
+		[x] removeMenuItem
+		[x] getMenuItemValue
+		[x] setMenuItemValue
+		[x] getMenuItemTitle
+		[x] setMenuItemTitle
+		[x] getMenuItemUserdata
+		[x] setMenuItemUserdata
+		[ ] getReduceFlashing
+		[x] getElapsedTime
+		[x] resetElapsedTime
+		[ ] getBatteryPercentage
+		[ ] getBatteryVoltage
+		[ ] getTimezoneOffset
+		[ ] shouldDisplay24HourTime
+		[ ] convertEpochToDateTime
+		[ ] convertDateTimeToEpoch
+		[ ] clearICache
+	@ Display
+		[-] getWidth
+		[-] getHeight
+		[ ] setRefreshRate
+		[ ] setInverted
+		[-] setScale
+		[ ] setMosaic
+		[ ] setFlipped
+		[-] setOffset
+	@ File
+		[x] geterr
+		[x] listfiles
+		[x] stat
+		[ ] mkdir
+		[x] unlink
+		[ ] rename
+		[x] open
+		[x] close
+		[x] read
+		[x] write
+		[ ] flush
+		[x] tell
+		[x] seek
+	@ Graphics
+		[x] clear
+		[ ] setBackgroundColor
+		[ ] setStencil
+		[x] setDrawMode
+		[ ] setDrawOffset
+		[-] setClipRect
+		[x] clearClipRect
+		[ ] setLineCapStyle
+		[x] setFont
+		[ ] setTextTracking
+		[x] pushContext
+		[x] popContext
+		[ ] drawBitmap
+		[ ] tileBitmap
+		[x] drawLine
+		[ ] fillTriangle
+		[x] drawRect
+		[ ] fillRect
+		[ ] drawEllipse
+		[ ] fillEllipse
+		[ ] drawScaledBitmap
+		[x] drawText
+		[x] newBitmap
+		[ ] freeBitmap
+		[x] loadBitmap
+		[ ] copyBitmap
+		[ ] loadIntoBitmap
+		[x] getBitmapData
+		[ ] clearBitmap
+		[ ] rotatedBitmap
+		[ ] newBitmapTable
+		[ ] freeBitmapTable
+		[x] loadBitmapTable
+		[ ] loadIntoBitmapTable
+		[x] getTableBitmap
+		[x] loadFont
+		[x] getFontPage
+		[x] getPageGlyph
+		[ ] getGlyphKerning
+		[x] getTextWidth
+		[ ] getFrame
+		[ ] getDisplayFrame
+		[ ] getDebugBitmap
+		[ ] copyFrameBufferBitmap
+		[ ] markUpdatedRows
+		[ ] display
+		[ ] setColorToPattern
+		[ ] checkMaskCollision
+		[x] setScreenClipRect
+		[ ] fillPolygon
+		[x] getFontHeight
+		[ ] getDisplayBufferBitmap
+		[x] drawRotatedBitmap
+		[ ] setTextLeading
+		[ ] setBitmapMask
+		[ ] getBitmapMask
+		[ ] setStencilImage
+		[ ] makeFontFromData
+		[ ] getTextTracking
+		@ Video
+			[ ] loadVideo
+			[ ] freePlayer
+			[ ] setContext
+			[ ] useScreenContext
+			[ ] renderFrame
+			[ ] getError
+			[ ] getInfo
+			[ ] getContext
+	@ Sound
+		[ ] getCurrentTime
+		[ ] addSource
+		[ ] getDefaultChannel
+		[ ] addChannel
+		[ ] removeChannel
+		[ ] setMicCallback
+		[ ] getHeadphoneState
+		[ ] setOutputsActive
+		[ ] removeSource
+		[ ] getError
+		@ channel
+			[ ] newChannel
+			[ ] freeChannel
+			[ ] addSource
+			[ ] removeSource
+			[ ] addCallbackSource
+			[ ] addEffect
+			[ ] removeEffect
+			[ ] setVolume
+			[ ] getVolume
+			[ ] setVolumeModulator
+			[ ] getVolumeModulator
+			[ ] setPan
+			[ ] setPanModulator
+			[ ] getPanModulator
+			[ ] getDryLevelSignal
+			[ ] getWetLevelSignal
+		@ fileplayer
+			[ ] newPlayer
+			[ ] freePlayer
+			[ ] loadIntoPlayer
+			[ ] setBufferLength
+			[ ] play
+			[ ] isPlaying
+			[ ] pause
+			[ ] stop
+			[ ] setVolume
+			[ ] getVolume
+			[ ] getLength
+			[ ] setOffset
+			[ ] setRate
+			[ ] setLoopRange
+			[ ] didUnderrun
+			[ ] setFinishCallback
+			[ ] setLoopCallback
+			[ ] getOffset
+			[ ] getRate
+			[ ] setStopOnUnderrun
+			[ ] fadeVolume
+			[ ] setMP3StreamSource
+		@ sample
+			[ ] newSampleBuffer
+			[ ] loadIntoSample
+			[x] load
+			[ ] newSampleFromData
+			[x] getData
+			[ ] freeSample
+			[x] getLength
+		@ sampleplayer
+			[x] newPlayer
+			[x] freePlayer
+			[x] setSample
+			[x] play
+			[x] isPlaying
+			[ ] stop
+			[x] setVolume
+			[ ] getVolume
+			[ ] getLength
+			[ ] setOffset
+			[ ] setRate
+			[ ] setPlayRange
+			[ ] setFinishCallback
+			[ ] setLoopCallback
+			[ ] getOffset
+			[ ] getRate
+			[ ] setPaused
+		@ synth
+			[ ] newSynth
+			[ ] freeSynth
+			[ ] setWaveform
+			[ ] setGenerator
+			[ ] setSample
+			[ ] setAttackTime
+			[ ] setDecayTime
+			[ ] setSustainLevel
+			[ ] setReleaseTime
+			[ ] setTranspose
+			[ ] setFrequencyModulator
+			[ ] getFrequencyModulator
+			[ ] setAmplitudeModulator
+			[ ] getAmplitudeModulator
+			[ ] getParameterCount
+			[ ] setParameter
+			[ ] setParameterModulator
+			[ ] getParameterModulator
+			[ ] playNote
+			[ ] playMIDINote
+			[ ] noteOff
+			[ ] stop
+			[ ] setVolume
+			[ ] getVolume
+			[ ] isPlaying
+			[ ] getEnvelope
+			[ ] setWavetable
+		@ sequence
+			[ ] newSequence
+			[ ] freeSequence
+			[ ] loadMidiFile
+			[ ] getTime
+			[ ] setTime
+			[ ] setLoops
+			[ ] getTempo
+			[ ] setTempo
+			[ ] getTrackCount
+			[ ] addTrack
+			[ ] getTrackAtIndex
+			[ ] setTrackAtIndex
+			[ ] allNotesOff
+			[ ] isPlaying
+			[ ] getLength
+			[ ] play
+			[ ] stop
+			[ ] getCurrentStep
+			[ ] setCurrentStep
+		@ effect
+			[ ] newEffect
+			[ ] freeEffect
+			[ ] setMix
+			[ ] setMixModulator
+			[ ] getMixModulator
+			[ ] setUserdata
+			[ ] getUserdata
+			@ twopolefilter
+				[ ] newFilter
+				[ ] freeFilter
+				[ ] setType
+				[ ] setFrequency
+				[ ] setFrequencyModulator
+				[ ] getFrequencyModulator
+				[ ] setGain
+				[ ] setResonance
+				[ ] setResonanceModulator
+				[ ] getResonanceModulator
+			@ onepolefilter
+				[ ] newFilter
+				[ ] freeFilter
+				[ ] setParameter
+				[ ] setParameterModulator
+				[ ] getParameterModulator
+			@ bitcrusher
+				[ ] newBitCrusher
+				[ ] freeBitCrusher
+				[ ] setAmount
+				[ ] setAmountModulator
+				[ ] getAmountModulator
+				[ ] setUndersampling
+				[ ] setUndersampleModulator
+				[ ] getUndersampleModulator
+			@ ringmodulator
+				[ ] newRingmod
+				[ ] freeRingmod
+				[ ] setFrequency
+				[ ] setFrequencyModulator
+				[ ] getFrequencyModulator
+			@ delayline
+				[ ] newDelayLine
+				[ ] freeDelayLine
+				[ ] setLength
+				[ ] setFeedback
+				[ ] addTap
+				[ ] freeTap
+				[ ] setTapDelay
+				[ ] setTapDelayModulator
+				[ ] getTapDelayModulator
+				[ ] setTapChannelsFlipped
+			@ overdrive
+				[ ] newOverdrive
+				[ ] freeOverdrive
+				[ ] setGain
+				[ ] setLimit
+				[ ] setLimitModulator
+				[ ] getLimitModulator
+				[ ] setOffset
+				[ ] setOffsetModulator
+				[ ] getOffsetModulator
+		@ lfo
+			[ ] newLFO
+			[ ] freeLFO
+			[ ] setType
+			[ ] setRate
+			[ ] setPhase
+			[ ] setCenter
+			[ ] setDepth
+			[ ] setArpeggiation
+			[ ] setFunction
+			[ ] setDelay
+			[ ] setRetrigger
+			[ ] getValue
+			[ ] setGlobal
+			[ ] setStartPhase
+		@ envelope
+			[ ] newEnvelope
+			[ ] freeEnvelope
+			[ ] setAttack
+			[ ] setDecay
+			[ ] setSustain
+			[ ] setRelease
+			[ ] setLegato
+			[ ] setRetrigger
+			[ ] getValue
+			[ ] setCurvature
+			[ ] setVelocitySensitivity
+			[ ] setRateScaling
+		@ source
+			[ ] setVolume
+			[ ] getVolume
+			[ ] isPlaying
+			[ ] setFinishCallback
+		@ controlsignal
+			[ ] newSignal
+			[ ] freeSignal
+			[ ] clearEvents
+			[ ] addEvent
+			[ ] removeEvent
+			[ ] getMIDIControllerNumber
+		@ track
+			[ ] newTrack
+			[ ] freeTrack
+			[ ] setInstrument
+			[ ] getInstrument
+			[ ] addNoteEvent
+			[ ] removeNoteEvent
+			[ ] clearNotes
+			[ ] getControlSignalCount
+			[ ] getControlSignal
+			[ ] clearControlEvents
+			[ ] getPolyphony
+			[ ] activeVoiceCount
+			[ ] setMuted
+			[ ] getLength
+			[ ] getIndexForStep
+			[ ] getNoteAtIndex
+			[ ] getSignalForController
+		@ instrument
+			[ ] newInstrument
+			[ ] freeInstrument
+			[ ] addVoice
+			[ ] playNote
+			[ ] playMIDINote
+			[ ] setPitchBend
+			[ ] setPitchBendRange
+			[ ] setTranspose
+			[ ] noteOff
+			[ ] allNotesOff
+			[ ] setVolume
+			[ ] getVolume
+			[ ] activeVoiceCount
+		@ signal
+			[ ] newSignal
+			[ ] freeSignal
+			[ ] getValue
+			[ ] setValueScale
+			[ ] setValueOffset
+	@ Sprite
+		[ ] setAlwaysRedraw
+		[ ] addDirtyRect
+		[ ] drawSprites
+		[ ] updateAndDrawSprites
+		[ ] newSprite
+		[ ] freeSprite
+		[ ] copy
+		[ ] addSprite
+		[ ] removeSprite
+		[ ] removeSprites
+		[ ] removeAllSprites
+		[ ] getSpriteCount
+		[ ] setBounds
+		[ ] getBounds
+		[ ] moveTo
+		[ ] moveBy
+		[ ] setImage
+		[ ] getImage
+		[ ] setSize
+		[ ] setZIndex
+		[ ] getZIndex
+		[ ] setDrawMode
+		[ ] setImageFlip
+		[ ] getImageFlip
+		[ ] setStencil
+		[ ] setClipRect
+		[ ] clearClipRect
+		[ ] setClipRectsInRange
+		[ ] clearClipRectsInRange
+		[ ] setUpdatesEnabled
+		[ ] updatesEnabled
+		[ ] setCollisionsEnabled
+		[ ] collisionsEnabled
+		[ ] setVisible
+		[ ] isVisible
+		[ ] setOpaque
+		[ ] markDirty
+		[ ] setTag
+		[ ] getTag
+		[ ] setIgnoresDrawOffset
+		[ ] setUpdateFunction
+		[ ] setDrawFunction
+		[ ] getPosition
+		[ ] resetCollisionWorld
+		[ ] setCollideRect
+		[ ] getCollideRect
+		[ ] clearCollideRect
+		[ ] setCollisionResponseFunction
+		[ ] checkCollisions
+		[ ] moveWithCollisions
+		[ ] querySpritesAtPoint
+		[ ] querySpritesInRect
+		[ ] querySpritesAlongLine
+		[ ] querySpriteInfoAlongLine
+		[ ] overlappingSprites
+		[ ] allOverlappingSprites
+		[ ] setStencilPattern
+		[ ] clearStencil
+		[ ] setUserdata
+		[ ] getUserdata
+		[ ] setStencilImage
+		[ ] setCenter
+		[ ] getCenter
+	@ Scoreboards
+		[ ] addScore
+		[ ] getPersonalBest
+		[ ] freeScore
+		[ ] getScoreboards
+		[ ] freeBoardsList
+		[ ] getScores
+		[ ] freeScoresList
+	@ Json
+		[ ] initEncoder
+		[ ] decode
+		[ ] decodeString
+		@ encoder
+			[ ] startArray
+			[ ] addArrayMember
+			[ ] endArray
+			[ ] startTable
+			[ ] addTableMember
+			[ ] endTable
+			[ ] writeNull
+			[ ] writeFalse
+			[ ] writeTrue
+			[ ] writeInt
+			[ ] writeDouble
+			[ ] writeString
+	@ Lua
+		[ ] addFunction
+		[ ] registerClass
+		[ ] pushFunction
+		[ ] indexMetatable
+		[ ] stop
+		[ ] start
+		[ ] getArgCount
+		[ ] getArgType
+		[ ] argIsNil
+		[ ] getArgBool
+		[ ] getArgInt
+		[ ] getArgFloat
+		[ ] getArgString
+		[ ] getArgBytes
+		[ ] getArgObject
+		[ ] getBitmap
+		[ ] getSprite
+		[ ] pushNil
+		[ ] pushBool
+		[ ] pushInt
+		[ ] pushFloat
+		[ ] pushString
+		[ ] pushBytes
+		[ ] pushBitmap
+		[ ] pushSprite
+		[ ] pushObject
+		[ ] retainObject
+		[ ] releaseObject
+		[ ] setUserValue
+		[ ] getUserValue
+		[ ] callFunction_deprecated
+		[ ] callFunction
 
 [X] Checked off item placeholder

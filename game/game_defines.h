@@ -9,6 +9,7 @@ Date:   12\19\2023
 
 #define MAIN_FONT_PATH   "/System/Fonts/Asheville-Sans-14-Bold.pft"
 
+#define REFRESH_RATE     50 //Hz
 #define FIRST_APP_STATE  AppState_MainMenu
 
 #define GAME_COMPLETION_ANIM_TIME   3000 //ms

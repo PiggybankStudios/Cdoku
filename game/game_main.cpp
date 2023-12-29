@@ -40,6 +40,8 @@ AppState_t InitGame()
 	gl->errorTexture = LoadTexture(NewStr("Resources/Textures/dither2"));
 	Assert(gl->errorTexture.isValid);
 	
+	pd->display->setRefreshRate((r32)REFRESH_RATE);
+	
 	return FIRST_APP_STATE;
 }
 

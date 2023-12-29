@@ -278,7 +278,7 @@ void RenderAppState_Game(bool isOnTop)
 	MemArena_t* scratch = GetScratchArena();
 	GameUiLayout();
 	
-	if (game->screenIsDirty || pig->debugEnabled)
+	if (game->screenIsDirty || pig->debugEnabled || pig->perfGraph.enabled)
 	{
 		
 		pd->graphics->clear(kColorWhite);
