@@ -4,8 +4,8 @@ rem The "Safe" name doesn't have spaces or invalid characters and also doesn't c
 set ProjectName=C-doku
 set ProjectNameSafe=Cdoku
 
-set DebugBuild=0
-set DeveloperBuild=0
+set DebugBuild=1
+set DeveloperBuild=1
 set SimulatorBuild=1
 set BuildBoth=1
 set DemoBuild=0
@@ -37,8 +37,6 @@ set ArmCompilerExeName=arm-none-eabi-gcc
 set ArmObjCopyExeName=arm-none-eabi-objcopy
 set ArmStripExeName=arm-none-eabi-strip
 set PlaydateChip=cortex-m7
-set PlaydateHeapSize=8388208
-set PlaydateStackSize=61800
 
 echo Running on %ComputerName%
 
@@ -130,7 +128,7 @@ rem |                       CompileForDevice                       |
 rem +--------------------------------------------------------------+
 :CompileForDevice
 
-set SharedFlags=-D__HEAP_SIZE=%PlaydateHeapSize% -D__STACK_SIZE=%PlaydateStackSize% -D "TARGET_PLAYDATE=1" -D "TARGET_EXTENSION=1"
+set SharedFlags=%SharedFlags% -D "TARGET_PLAYDATE=1" -D "TARGET_EXTENSION=1"
 rem -mfloat-abi=hard = Use hardware instructions for floating-point operations (from FPU)
 rem -mfpu=fpv5-sp-d16 = Specifies the target FPU architecture, that is the floating-point hardware available on the target. (Armv7 FPv5-SP-D16 floating-point extension) (from FPU)
 rem __FPU_USED = ? (from FPU)

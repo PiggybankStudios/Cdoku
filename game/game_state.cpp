@@ -278,15 +278,28 @@ void RenderAppState_Game(bool isOnTop)
 	MemArena_t* scratch = GetScratchArena();
 	GameUiLayout();
 	
-	if (game->screenIsDirty)
+	if (game->screenIsDirty || pig->debugEnabled)
 	{
-		game->screenIsDirty = false;
 		
 		pd->graphics->clear(kColorWhite);
 		PdSetDrawMode(kDrawModeCopy);
 		
-		PdDrawTexturedRec(game->backgroundTexture, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
+		// +==============================+
+		// |      Render Background       |
+		// +==============================+
+		if (!pig->debugEnabled)
+		{
+			PdDrawTexturedRec(game->backgroundTexture, NewReci(0, 0, PLAYDATE_SCREEN_WIDTH, PLAYDATE_SCREEN_HEIGHT));
+		}
+		
+		// +==============================+
+		// |         Render Board         |
+		// +==============================+
 		RenderBoard(&game->board, &game->cursor, game->completed);
+		
+		// +==============================+
+		// |        Render Cursor         |
+		// +==============================+
 		if (!game->completed)
 		{
 			RenderCursor(&game->cursor, &game->board);
@@ -344,11 +357,17 @@ void RenderAppState_Game(bool isOnTop)
 			PdBindFont(&pig->debugFont);
 			i32 stepY = pig->debugFont.lineHeight + 1;
 			
+			PdDrawTextPrint(textPos, "Memory: %.2lf%%", ((r64)mainHeap->used / (r64)MAIN_HEAP_MAX_SIZE) * 100.0);
+			textPos.y += stepY;
 			PdDrawTextPrint(textPos, "ProgramTime: %u (%u)", ProgramTime, input->realProgramTime);
+			textPos.y += stepY;
+			PdDrawTextPrint(textPos, "Screen: %s%s", game->screenIsDirty ? "Yes" : "No", game->nextUpdateIsDirty ? " (Double)" : "");
 			textPos.y += stepY;
 			
 			PdSetDrawMode(oldDrawMode);
 		}
+		
+		game->screenIsDirty = false;
 	}
 	
 	FreeScratchArena(scratch);

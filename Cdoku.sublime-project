@@ -29,6 +29,7 @@
 				"PlaydateSDK.docset",
 				"resources",
 				"C_API/buildsupport",
+				"C_API/Examples",
 				"CoreLibs/assets",
 			],
 			"file_exclude_patterns":
@@ -596,10 +597,21 @@
 		],
 		"custom_globals":
 		[
+			"ElapsedMs",
+			"ProgramTime",
+			"ScreenRec",
+			"ScreenRecf",
+			"ScreenSize",
+			"ScreenSizef",
+			"TimeScale",
+			"fixedHeap",
 			"game",
 			"gl",
+			"input",
 			"mainHeap",
 			"mmenu",
+			"pd",
+			"pig",
 		],
 		"custom_types":
 		[
