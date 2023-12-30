@@ -24,6 +24,7 @@
 		@ Default
 		@ Crank to select number, a to place, b to toggle note
 	[ ] Grey out completed numbers
+	[ ] Timer during game, or after completion, or not at all
 
 # API Functions
 	@ System

@@ -60,6 +60,10 @@ void MainMenuGenerateButtons(MMenuSubMenu_t subMenu)
 	{
 		case MMenuSubMenu_None:
 		{
+			if (mmenu->lastPlayedExists && mmenu->lastPlayedIsUnfinished)
+			{
+				AddButtonMainMenu(MMenuAction_Continue, NewStr("CONTINUE"));
+			}
 			AddButtonMainMenu(MMenuAction_Play,     NewStr("PUZZLES"));
 			AddButtonMainMenu(MMenuAction_Settings, NewStr("SETTINGS"));
 			// AddButtonMainMenu(MMenuAction_Exit,     NewStr("EXIT"));
@@ -158,6 +162,19 @@ void MainMenuGotoSubMenu(MMenuSubMenu_t newSubMenu)
 	{
 		mmenu->selectionIndex = (mmenu->buttons.length > 0) ? ((i64)mmenu->buttons.length-1) : -1;
 	}
+	if (newSubMenu == MMenuSubMenu_LevelSelect && !IsEmptyStr(gl->currentLevel) && mmenu->selectionIndex < 0)
+	{
+		VarArrayLoop(&mmenu->buttons, bIndex)
+		{
+			VarArrayLoopGet(MMenuBtn_t, button, &mmenu->buttons, bIndex);
+			if (button->action == MMenuAction_Level && StrEqualsIgnoreCase(button->referencePath, gl->currentLevel))
+			{
+				mmenu->selectionIndex = (i64)bIndex;
+				break;
+			}
+		}
+	}
+	if (mmenu->selectionIndex < 0 && mmenu->buttons.length > 0) { mmenu->selectionIndex = 0; }
 	mmenu->jumpToSelection = true;
 }
 
@@ -173,6 +190,41 @@ void MainMenuCheckForSaveFileForBtn(MMenuBtn_t* button)
 		button->checkedForSaveFiles = true;
 		Decrement(mmenu->numSaveFilesUnchecked);
 		FreeScratchArena(scratch);
+	}
+}
+void MainMenuCheckLastPlayed()
+{
+	MemArena_t* scratch = GetScratchArena();
+	
+	mmenu->lastPlayedExists = false;
+	mmenu->lastPlayedIsUnfinished = false;
+	FreeString(mainHeap, &mmenu->lastPlayedPath);
+	
+	MyStr_t lastPlayedFileContents;
+	bool foundLastPlayed = ReadEntireFile(true, NewStr(LAST_PLAYED_LEVEL_PATH), &lastPlayedFileContents, scratch);
+	if (foundLastPlayed)
+	{
+		if (DoesFileExist(false, lastPlayedFileContents))
+		{
+			mmenu->lastPlayedExists = true;
+			mmenu->lastPlayedPath = AllocString(mainHeap, &lastPlayedFileContents);
+			MyStr_t completedFilePath = GetLevelSaveFilePath(scratch, lastPlayedFileContents, true);
+			mmenu->lastPlayedIsUnfinished = !DoesFileExist(true, completedFilePath);
+		}
+		else
+		{
+			PrintLine_W("Last Played path doesn't exist: \"%.*s\"", StrPrint(lastPlayedFileContents));
+		}
+	}
+	else { PrintLine_D("Last played file doesn't exist at \"%s\"", LAST_PLAYED_LEVEL_PATH); }
+	
+	FreeScratchArena(scratch);
+}
+void MainMenuSaveLastPlayed(MyStr_t levelPath)
+{
+	if (!WriteEntireFile(NewStr(LAST_PLAYED_LEVEL_PATH), levelPath))
+	{
+		PrintLine_E("Failed to save last played path \"%.*s\" to \"%s\"", StrPrint(levelPath), LAST_PLAYED_LEVEL_PATH);
 	}
 }
 
@@ -264,10 +316,16 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 		
 		mmenu->subMenu = MMenuSubMenu_None;
 		
+		for (u64 sIndex = 0; sIndex < MMenuSubMenu_NumSubMenus; sIndex++)
+		{
+			mmenu->oldSelectionIndices[sIndex] = -1;
+		}
+		
+		MainMenuCheckLastPlayed();
+		
 		CreateVarArray(&mmenu->buttons, mainHeap, sizeof(MMenuBtn_t));
 		
 		#if 0
-		MemArena_t* scratch = GetScratchArena();
 		FilesInDir_t baseFiles = GetFilesInDirectory(NewStr(""), scratch, true);
 		PrintLine_D("There are %llu files in the base folder:", baseFiles.count);
 		for (u64 fIndex = 0; fIndex < baseFiles.count; fIndex++)
@@ -280,7 +338,6 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 			}
 			PrintLine_D("[%llu]: %.*s (%llu file%s)", fIndex, StrPrint(baseFiles.paths[fIndex]), numFiles, (numFiles == 0) ? "" : "s");
 		}
-		FreeScratchArena(scratch);
 		#endif
 		
 		mmenu->selectionIndex = 0;
@@ -291,6 +348,13 @@ void StartAppState_MainMenu(bool initialize, AppState_t prevState, MyStr_t trans
 	}
 	else
 	{
+		MainMenuCheckLastPlayed();
+		
+		if (prevState == AppState_Game && mmenu->subMenu != MMenuSubMenu_LevelSelect)
+		{
+			MainMenuGotoSubMenu(MMenuSubMenu_LevelSelect);
+		}
+		
 		// Upon returning to the level select screen from playing a level, we need to recheck which save files exist
 		VarArrayLoop(&mmenu->buttons, bIndex)
 		{
@@ -316,6 +380,13 @@ void StopAppState_MainMenu(bool deinitialize, AppState_t nextState)
 	if (deinitialize)
 	{
 		//TODO: Free mmenu->handSheet
+		//TODO: Free mmenu->btnCornersSheet
+		//TODO: Free mmenu->titleFont
+		//TODO: Free mmenu->buttonFont
+		//TODO: Free mmenu->levelBtnFont
+		//TODO: Free mmenu->titleSprite
+		//TODO: Free mmenu->bottomDitherSprite
+		FreeString(mainHeap, &mmenu->lastPlayedPath);
 		ClearButtonsMainMenu();
 		FreeVarArray(&mmenu->buttons);
 		ClearPointer(mmenu);
@@ -345,7 +416,25 @@ void UpdateAppState_MainMenu()
 				// +==============================+
 				case MMenuAction_Play:
 				{
+					if (mmenu->lastPlayedExists) { SetCurrentLevel(mmenu->lastPlayedPath); }
+					else { SetCurrentLevel(MyStr_Empty); }
 					MainMenuGotoSubMenu(MMenuSubMenu_LevelSelect);
+				} break;
+				
+				// +==============================+
+				// |    Continue Btn Selected     |
+				// +==============================+
+				case MMenuAction_Continue:
+				{
+					if (mmenu->lastPlayedExists)
+					{
+						SetCurrentLevel(mmenu->lastPlayedPath);
+						PushAppState(AppState_Game);
+					}
+					else
+					{
+						WriteLine_E("The Continue button was pressed by the last played file doesn't exist!");
+					}
 				} break;
 				
 				// +==============================+
@@ -353,12 +442,14 @@ void UpdateAppState_MainMenu()
 				// +==============================+
 				case MMenuAction_Level:
 				{
+					PrintLine_I("Opening level \"%.*s\"", StrPrint(selectedBtn->referencePath));
 					SetCurrentLevel(selectedBtn->referencePath);
+					MainMenuSaveLastPlayed(selectedBtn->referencePath);
 					PushAppState(AppState_Game);
 				} break;
 				
 				// +==============================+
-				// |        Level Selected        |
+				// |      Settings Selected       |
 				// +==============================+
 				case MMenuAction_Settings:
 				{
@@ -668,6 +759,16 @@ void RenderAppState_MainMenu(bool isOnTop)
 		textPos.y += stepY;
 		PdDrawTextPrint(textPos, "Memory: %.2lf%%", ((r64)mainHeap->used / (r64)MAIN_HEAP_MAX_SIZE) * 100.0);
 		textPos.y += stepY;
+		if (mmenu->lastPlayedExists)
+		{
+			PdDrawTextPrint(textPos, "Last Played: %.*s%s", StrPrint(mmenu->lastPlayedPath), mmenu->lastPlayedIsUnfinished ? "" : " (COMPLETED)");
+			textPos.y += stepY;
+		}
+		else
+		{
+			PdDrawText("Last Played: (NONE)", textPos);
+			textPos.y += stepY;
+		}
 		
 		#if 0
 		{

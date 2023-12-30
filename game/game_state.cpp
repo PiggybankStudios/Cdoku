@@ -293,6 +293,31 @@ void RenderAppState_Game(bool isOnTop)
 		}
 		
 		// +==============================+
+		// |      Render Status Bar       |
+		// +==============================+
+		{
+			reci statusRec;
+			statusRec.x = 0;
+			statusRec.y = game->board.mainRec.y + game->board.mainRec.height;
+			statusRec.width = ScreenSize.width;
+			statusRec.height = ScreenSize.height - statusRec.y;
+			MyStr_t currentLevelName = GetFileNamePart(gl->currentLevel, false);
+			v2i currentLevelNameSize = MeasureText(pig->debugFont.font, currentLevelName);
+			v2i currentLevelNameDrawPos = NewVec2i(
+				statusRec.x + statusRec.width - 5 - currentLevelNameSize.width,
+				statusRec.y + statusRec.height/2 - currentLevelNameSize.height/2
+			);
+			
+			PdDrawRec(statusRec, kColorBlack);
+			PdSetDrawMode(kDrawModeNXOR);
+			
+			PdBindFont(&pig->debugFont);
+			PdDrawText(currentLevelName, currentLevelNameDrawPos);
+			
+			PdSetDrawMode(kDrawModeCopy);
+		}
+		
+		// +==============================+
 		// |         Render Board         |
 		// +==============================+
 		RenderBoard(&game->board, &game->cursor, game->completed);

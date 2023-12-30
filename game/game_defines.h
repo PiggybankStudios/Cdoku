@@ -14,4 +14,6 @@ Date:   12\19\2023
 
 #define GAME_COMPLETION_ANIM_TIME   3000 //ms
 
+#define LAST_PLAYED_LEVEL_PATH  "last_played.txt"      
+
 #endif //  _GAME_DEFINES_H

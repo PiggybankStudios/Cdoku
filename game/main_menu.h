@@ -34,6 +34,7 @@ enum MMenuAction_t
 {
 	MMenuAction_None = 0,
 	MMenuAction_Play,
+	MMenuAction_Continue,
 	MMenuAction_Level,
 	MMenuAction_Settings,
 	MMenuAction_Back,
@@ -46,6 +47,7 @@ const char* GetMMenuActionStr(MMenuAction_t enumValue)
 	{
 		case MMenuAction_None:     return "None";
 		case MMenuAction_Play:     return "Play";
+		case MMenuAction_Continue: return "Continue";
 		case MMenuAction_Level:    return "Level";
 		case MMenuAction_Settings: return "Settings";
 		case MMenuAction_Back:     return "Back";
@@ -98,6 +100,10 @@ struct MainMenuState_t
 	Font_t levelBtnFont;
 	Texture_t titleSprite;
 	Texture_t bottomDitherSprite;
+	
+	bool lastPlayedExists;
+	bool lastPlayedIsUnfinished;
+	MyStr_t lastPlayedPath;
 	
 	MMenuSubMenu_t subMenu;
 	i64 oldSelectionIndices[MMenuSubMenu_NumSubMenus];
