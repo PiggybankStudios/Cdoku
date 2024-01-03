@@ -1,12 +1,12 @@
 
 # TODO List:
+	[ ] Hold B to Undo
 	[x] Make the game run at 50fps
 	[X] Track last played level and add a "Continue" button to main menu
 	[ ] Add a settings menu with checkboxes and combo boxes
-	[ ] Highlight notes of same number
+	[X] Highlight notes of same number
 	[ ] Separate levels by difficulty (folders?)
 	[ ] Hold A to place only acceptable number
-	[ ] Hold B to Undo
 	[ ] Button hints at bottom of screen
 	[ ] Hold B to clear save of level
 	[ ] Add sound effects

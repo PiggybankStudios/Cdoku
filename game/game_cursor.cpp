@@ -40,7 +40,7 @@ void CursorAddPrevPosition(Cursor_t* cursor, v2i gridPos, Dir2_t moveDir)
 	}
 }
 
-bool UpdateCursor(Cursor_t* cursor, Board_t* board)
+bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 {
 	bool boardChanged = false;
 	
@@ -162,14 +162,31 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 		{
 			u16 noteFlag = (1 << (cursor->notePos.x + (cursor->notePos.y * 3)));
 			FlagToggle(selectedCell->notes, noteFlag);
+			if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
+			PushMove(history, NewMove(
+				(u8)cursor->gridPos.x,
+				(u8)cursor->gridPos.y,
+				(u8)(1 + cursor->notePos.x + cursor->notePos.y*3),
+				true,
+				false
+			));
 			boardChanged = true;
 		}
 		else
 		{
 			if (!IsFlagSet(selectedCell->flags, CellFlag_IsGiven))
 			{
+				u8 oldValue = selectedCell->value;
 				selectedCell->value++;
 				if (selectedCell->value > 9) { selectedCell->value = 0; }
+				if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
+				PushMove(history, NewMove(
+					(u8)cursor->gridPos.x,
+					(u8)cursor->gridPos.y,
+					((selectedCell->value == 0) ? oldValue : selectedCell->value),
+					false,
+					(selectedCell->value == 0)
+				));
 				boardChanged = true;
 			}
 		}
@@ -179,9 +196,9 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 	// | Btn_B Toggles Notes Mode or Clears Cell  |
 	// +==========================================+
 	//TODO: Add support for holding Btn_A to move quickly
-	if (BtnPressed(Btn_B))
+	if (BtnTapped(Btn_B, UNDO_BTN_HOLD_TIME))
 	{
-		HandleBtnExtended(Btn_B);
+		HandleBtn(Btn_B);
 		game->screenIsDirty = true;
 		if (cursor->makingNotes)
 		{
@@ -199,10 +216,44 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board)
 				}
 				else
 				{
+					u8 oldValue = selectedCell->value;
 					selectedCell->value = 0;
+					if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
+					PushMove(history, NewMove(
+						(u8)cursor->gridPos.x,
+						(u8)cursor->gridPos.y,
+						oldValue,
+						false,
+						true
+					));
 					boardChanged = true;
 				}
 			}
+		}
+	}
+	
+	// +==============================+
+	// |     Btn_B Holding Undos      |
+	// +==============================+
+	u32 holdTime = UNDO_BTN_HOLD_TIME;
+	if (TimeSince(input->btnStates[Btn_B].lastTransitionTime) >= UNDO_BTN_HOLD_TIME + UNDO_BTN_FIRST_REPEAT_TIME) { holdTime = UNDO_BTN_REPEAT_TIME; }
+	else if (TimeSince(input->btnStates[Btn_B].lastTransitionTime) >= UNDO_BTN_HOLD_TIME) { holdTime = UNDO_BTN_FIRST_REPEAT_TIME; }
+	if (BtnHeld(Btn_B, holdTime))
+	{
+		HandleBtn(Btn_B);
+		if (game->history.numMoves > game->undoIndex)
+		{
+			Move_t prevMove = game->history.moves[game->undoIndex];
+			PrintLine_D("Undoing[%u] %s %u at (%u, %u)",
+				(u32)game->undoIndex,
+				(prevMove.isNote ? "Note" : (prevMove.isClear ? "Clear" : "Place")),
+				(u32)prevMove.value,
+				(u32)prevMove.x, (u32)prevMove.y
+			);
+			UndoMove(&game->board, prevMove);
+			game->screenIsDirty = true;
+			boardChanged = true;
+			game->undoIndex++;
 		}
 	}
 	

@@ -9,6 +9,7 @@ Description:
 GameState_t* game = nullptr;
 
 #include "game_board.cpp"
+#include "game_undo.cpp"
 #include "game_cursor.cpp"
 
 void GameMainMenuSelectedCallback(void* userPntr)
@@ -132,6 +133,7 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		
 		InitBoard(&game->board, levelFileContents);
 		InitCursor(&game->cursor, NewVec2i(4, 4), &game->board);
+		InitMoveList(&game->history);
 		
 		MyStr_t completedFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, true);
 		MyStr_t saveFilePath = GetLevelSaveFilePath(scratch, gl->currentLevel, false);
@@ -215,7 +217,7 @@ void UpdateAppState_Game()
 	bool boardChanged = false;
 	if (!game->completed)
 	{
-		boardChanged = UpdateCursor(&game->cursor, &game->board);
+		boardChanged = UpdateCursor(&game->cursor, &game->board, &game->history);
 	}
 	
 	// +==============================+
@@ -388,6 +390,22 @@ void RenderAppState_Game(bool isOnTop)
 			textPos.y += stepY;
 			PdDrawTextPrint(textPos, "Screen: %s%s", game->screenIsDirty ? "Yes" : "No", game->nextUpdateIsDirty ? " (Double)" : "");
 			textPos.y += stepY;
+			
+			#if 1
+			textPos.y += stepY;
+			for (u8 mIndex = 0; mIndex < game->history.numMoves; mIndex++)
+			{
+				Move_t move = game->history.moves[mIndex];
+				PdDrawTextPrint(textPos, "%s[%u] %s %u at (%u, %u)",
+					((game->undoIndex == mIndex) ? "->" : ""),
+					(u32)mIndex,
+					(move.isNote ? "Note" : (move.isClear ? "Clear" : "Place")),
+					(u32)move.value,
+					(u32)move.x, (u32)move.y
+				);
+				textPos.y += stepY;
+			}
+			#endif
 			
 			PdSetDrawMode(oldDrawMode);
 		}

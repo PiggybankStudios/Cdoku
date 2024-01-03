@@ -8,6 +8,7 @@ Date:   12\19\2023
 #define _GAME_STATE_H
 
 #include "game_board.h"
+#include "game_undo.h"
 #include "game_cursor.h"
 
 struct GameState_t
@@ -26,6 +27,8 @@ struct GameState_t
 	
 	Board_t board;
 	Cursor_t cursor;
+	u8 undoIndex;
+	MoveList_t history;
 	
 	bool screenIsDirty;
 	bool nextUpdateIsDirty;
