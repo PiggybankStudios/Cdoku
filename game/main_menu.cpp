@@ -655,7 +655,7 @@ void RenderAppState_MainMenu(bool isOnTop)
 			else if (button->hasSaveFile)
 			{
 				displayText = PrintInArenaStr(scratch, "%.*s*", StrPrint(displayText));
-				PdDrawTexturedRecPart(gl->ditherTexture, mainRec, NewReci(0, 0, mainRec.size));
+				PdDrawTexturedRecPart(gl->highlightDither, mainRec, NewReci(0, 0, mainRec.size));
 				PdDrawRecOutline(mainRec, 2, false, kColorBlack);
 			}
 			else if (isLevelBtn)

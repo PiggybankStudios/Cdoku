@@ -18,8 +18,9 @@ struct GameGlobals_t
 	bool initialized;
 	
 	MyStr_t currentLevel;
-	Texture_t ditherTexture;
-	Texture_t errorTexture;
+	Texture_t highlightDither;
+	Texture_t errorDither;
+	Texture_t noteDither;
 };
 
 #endif //  _GAME_MAIN_H

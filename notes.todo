@@ -1,7 +1,7 @@
 
 # TODO List:
 	[x] Make the game run at 50fps
-	[ ] Track last played level and add a "Continue" button to main menu
+	[X] Track last played level and add a "Continue" button to main menu
 	[ ] Add a settings menu with checkboxes and combo boxes
 	[ ] Highlight notes of same number
 	[ ] Separate levels by difficulty (folders?)

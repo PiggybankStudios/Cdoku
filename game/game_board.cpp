@@ -268,22 +268,37 @@ void RenderBoard(Board_t* board, Cursor_t* cursor, bool completed)
 		{
 			v2i gridPos = NewVec2i(xPos, yPos);
 			Cell_t* cell = GetCell(board, gridPos);
+			bool isHighlighted = false;
+			
+			if (!completed)
+			{
+				u16 selectedCellNoteBit = (u16)(1 << (selectedCell->value - 1));
+				// +==================================+
+				// | Render Conflicts and Highlights  |
+				// +==================================+
+				if (IsFlagSet(cell->flags, CellFlag_Conflict))
+				{
+					PdDrawTexturedRecPart(gl->errorDither, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+					isHighlighted = true;
+				}
+				else if (cell->gridPos != selectedCell->gridPos && selectedCell->value > 0)
+				{
+					if (cell->value == selectedCell->value)
+					{
+						PdDrawTexturedRecPart(gl->highlightDither, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+						isHighlighted = true;
+					}
+					else if (cell->value == 0 && IsFlagSet(cell->notes, selectedCellNoteBit))
+					{
+						PdDrawTexturedRecPart(gl->noteDither, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
+						isHighlighted = true;
+					}
+				}
+			}
 			
 			if (cell->value > 0)
 			{
 				Assert(cell->value <= 9);
-				
-				if (!completed)
-				{
-					if (IsFlagSet(cell->flags, CellFlag_Conflict))
-					{
-						PdDrawTexturedRecPart(gl->errorTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
-					}
-					else if (cell->value == selectedCell->value && cell->gridPos != selectedCell->gridPos)
-					{
-						PdDrawTexturedRecPart(gl->ditherTexture, cell->innerRec, NewReci(0, 0, cell->innerRec.size));
-					}
-				}
 				
 				reci numberRec = NewReci(
 					cell->mainRec.x + cell->mainRec.width/2 - game->numbersSheet.frameSize.width/2,
@@ -309,8 +324,15 @@ void RenderBoard(Board_t* board, Cursor_t* cursor, bool completed)
 								cell->innerRec.y + noteSize.height * noteY + noteSize.height/2 - game->notesSheet.frameSize.height/2,
 								game->notesSheet.frameSize
 							);
+							// if (!isHighlighted)
+							// {
 							v2i noteFrame = NewVec2i(noteX, noteY);
 							PdDrawSheetFrame(game->notesSheet, noteFrame, noteRec);
+							// }
+							// else
+							// {
+							// 	PdDrawRec(noteRec, kColorBlack);
+							// }
 						}
 					}
 				}
