@@ -666,7 +666,7 @@
 			"void PdPushOffscreenTarget(OffscreenTarget_t target)",
 			"void PlaceButtonsListMainMenu()",
 			"void PopMove(MoveList_t* list)",
-			"void PopMoves(MoveList_t* list, u8 numMoves)",
+			"void PopMoves(MoveList_t* list, u16 numMoves)",
 			"void PostRenderGame()",
 			"void PostUpdateGame()",
 			"void PreRenderGame()",

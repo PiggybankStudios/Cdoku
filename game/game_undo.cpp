@@ -39,7 +39,7 @@ void PushMove(MoveList_t* list, u8 oldNumber, Move_t move)
 		PushMove(list, oldNumber, NewMove(move.x, move.y, oldNumber, false, true, true));
 	}
 	
-	for (u8 mIndex = MAX_NUM_UNDOS-1; mIndex > 0; mIndex--)
+	for (u16 mIndex = MAX_NUM_UNDOS-1; mIndex > 0; mIndex--)
 	{
 		list->moves[mIndex].wordValue = list->moves[mIndex-1].wordValue;
 	}
@@ -51,16 +51,16 @@ void PushMove(MoveList_t* list, u8 oldNumber, Move_t move)
 void PopMove(MoveList_t* list)
 {
 	Assert(list->numMoves > 0);
-	for (u8 mIndex = 0; mIndex+1 < MAX_NUM_UNDOS; mIndex++)
+	for (u16 mIndex = 0; mIndex+1 < MAX_NUM_UNDOS; mIndex++)
 	{
 		list->moves[mIndex].wordValue = list->moves[mIndex + 1].wordValue;
 	}
 	Decrement(list->numMoves);
 }
-void PopMoves(MoveList_t* list, u8 numMoves)
+void PopMoves(MoveList_t* list, u16 numMoves)
 {
 	Assert(list->numMoves >= numMoves);
-	for (u8 mIndex = 0; mIndex+numMoves < MAX_NUM_UNDOS; mIndex++)
+	for (u16 mIndex = 0; mIndex+numMoves < MAX_NUM_UNDOS; mIndex++)
 	{
 		list->moves[mIndex].wordValue = list->moves[mIndex + numMoves].wordValue;
 	}

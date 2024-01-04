@@ -421,7 +421,9 @@ void RenderAppState_Game(bool isOnTop)
 			
 			#if 1
 			textPos.y += stepY;
-			for (u8 mIndex = 0; mIndex < game->history.numMoves; mIndex++)
+			PdDrawTextPrint(textPos, "History: %u move%s", (u32)game->history.numMoves, ((game->history.numMoves == 1) ? "" : "s"));
+			textPos.y += stepY;
+			for (u16 mIndex = 0; mIndex < game->history.numMoves; mIndex++)
 			{
 				Move_t move = game->history.moves[mIndex];
 				PdDrawTextPrint(textPos, "%s[%u] %s %u at (%u, %u)",

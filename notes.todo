@@ -1,18 +1,29 @@
 
 # TODO List:
-	[ ] Hold B to Undo
+	[X] Hold B to Undo
 	[x] Make the game run at 50fps
 	[X] Track last played level and add a "Continue" button to main menu
-	[ ] Add a settings menu with checkboxes and combo boxes
 	[X] Highlight notes of same number
+	[X] Button hints at bottom of screen
+	[ ] Hold arrow keys to move
+	[ ] Add a settings menu with checkboxes and combo boxes
 	[ ] Separate levels by difficulty (folders?)
 	[ ] Hold A to place only acceptable number
-	[ ] Button hints at bottom of screen
 	[ ] Hold B to clear save of level
+	[ ] Option to reset level from start menu
+	[ ] Render nicely when paused
 	[ ] Add sound effects
 	[ ] Add music
 	[?] Draw arbitrary dither patterns
 	[?] fillRect instead of drawRect?
+	[ ] Save undo stack to save file
+	[ ] Crank hint when scrolling down long list of levels
+	{ } Better background
+	{ } Better title background
+	{ } Better launch card
+	{ } Launch card animation
+	{ } Music for main menu
+	{ } Music for game
 
 # Ideas for Options
 	[ ] Different fonts

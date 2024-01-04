@@ -14,9 +14,9 @@ Date:   12\19\2023
 
 #define GAME_COMPLETION_ANIM_TIME   3000 //ms
 
-#define LAST_PLAYED_LEVEL_PATH  "last_played.txt"      
+#define LAST_PLAYED_LEVEL_PATH  "last_played.txt"
 
-#define MAX_NUM_UNDOS       16 //moves
+#define MAX_NUM_UNDOS       320 //moves (about 9x9 * 4)
 #define UNDO_COMBINE_TIME   1000 //ms
 
 #define UNDO_BTN_HOLD_TIME          1000 //ms

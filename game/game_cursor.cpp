@@ -292,6 +292,11 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 				CursorAddUndoAnim(cursor, NewVec2i(autoMove.x, autoMove.y));
 				game->undoIndex++;
 			}
+			if (cursor->makingNotes)
+			{
+				cursor->makingNotes = false;
+				cursor->makingNotesAnimProgress = 1.0f;
+			}
 			game->screenIsDirty = true;
 			boardChanged = true;
 		}

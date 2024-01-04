@@ -9,7 +9,7 @@ Date:   12\19\2023
 
 #define GAME_VERSION_MAJOR 0
 #define GAME_VERSION_MINOR 5
-#define GAME_VERSION_BUILD 2
+#define GAME_VERSION_BUILD 7
 
 // 0.4: 143 builds
 // 0.3: 53 builds

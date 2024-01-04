@@ -30,7 +30,7 @@ union Move_t
 struct MoveList_t
 {
 	u32 prevMoveTime;
-	u8 numMoves;
+	u16 numMoves;
 	Move_t moves[MAX_NUM_UNDOS];
 };
 

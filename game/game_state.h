@@ -28,9 +28,8 @@ struct GameState_t
 	
 	Board_t board;
 	Cursor_t cursor;
-	u8 undoIndex;
+	u16 undoIndex;
 	MoveList_t history;
-	
 	
 	bool screenIsDirty;
 	bool nextUpdateIsDirty;
