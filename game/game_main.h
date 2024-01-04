@@ -21,6 +21,7 @@ struct GameGlobals_t
 	Texture_t highlightDither;
 	Texture_t errorDither;
 	Texture_t noteDither;
+	SpriteSheet_t btnPromptsSheet;
 };
 
 #endif //  _GAME_MAIN_H

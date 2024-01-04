@@ -40,6 +40,20 @@ void CursorAddPrevPosition(Cursor_t* cursor, v2i gridPos, Dir2_t moveDir)
 	}
 }
 
+void CursorAddUndoAnim(Cursor_t* cursor, v2i gridPos)
+{
+	for (u64 uIndex = 0; uIndex < CURSOR_MAX_UNDO_ANIMS; uIndex++)
+	{
+		UndoAnim_t* undoAnim = &cursor->undoAnims[uIndex];
+		if (undoAnim->animProgress == 0.0f)
+		{
+			undoAnim->gridPos = gridPos;
+			undoAnim->animProgress = 1.0f;
+			break;
+		}
+	}
+}
+
 bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 {
 	bool boardChanged = false;
@@ -68,6 +82,20 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 		UpdateAnimationDown(&cursor->makingNotesAnimProgress, CURSOR_NOTE_TAKING_ANIM_TIME);
 		game->screenIsDirty = true;
 		if (cursor->makingNotesAnimProgress > 0.0f) { game->nextUpdateIsDirty = true; }
+	}
+	
+	// +==============================+
+	// |    Update Undo Animations    |
+	// +==============================+
+	for (u32 uIndex = 0; uIndex < CURSOR_MAX_UNDO_ANIMS; uIndex++)
+	{
+		UndoAnim_t* undoAnim = &cursor->undoAnims[uIndex];
+		if (undoAnim->animProgress > 0.0f)
+		{
+			UpdateAnimationDown(&undoAnim->animProgress, CURSOR_UNDO_ANIM_TIME);
+			game->screenIsDirty = true;
+			if (undoAnim->animProgress > 0.0f) { game->nextUpdateIsDirty = true; }
+		}
 	}
 	
 	// +==============================+
@@ -163,11 +191,12 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 			u16 noteFlag = (1 << (cursor->notePos.x + (cursor->notePos.y * 3)));
 			FlagToggle(selectedCell->notes, noteFlag);
 			if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
-			PushMove(history, NewMove(
+			PushMove(history, 0, NewMove(
 				(u8)cursor->gridPos.x,
 				(u8)cursor->gridPos.y,
 				(u8)(1 + cursor->notePos.x + cursor->notePos.y*3),
 				true,
+				false,
 				false
 			));
 			boardChanged = true;
@@ -180,21 +209,22 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 				selectedCell->value++;
 				if (selectedCell->value > 9) { selectedCell->value = 0; }
 				if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
-				PushMove(history, NewMove(
+				PushMove(history, oldValue, NewMove(
 					(u8)cursor->gridPos.x,
 					(u8)cursor->gridPos.y,
 					((selectedCell->value == 0) ? oldValue : selectedCell->value),
 					false,
-					(selectedCell->value == 0)
+					(selectedCell->value == 0),
+					false
 				));
 				boardChanged = true;
 			}
 		}
 	}
 	
-	// +==========================================+
-	// | Btn_B Toggles Notes Mode or Clears Cell  |
-	// +==========================================+
+	// +==================================================+
+	// | Tapping Btn_B Toggles Notes Mode or Clears Cell  |
+	// +==================================================+
 	//TODO: Add support for holding Btn_A to move quickly
 	if (BtnTapped(Btn_B, UNDO_BTN_HOLD_TIME))
 	{
@@ -219,12 +249,13 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 					u8 oldValue = selectedCell->value;
 					selectedCell->value = 0;
 					if (game->undoIndex > 0) { PopMoves(history, game->undoIndex); game->undoIndex = 0; }
-					PushMove(history, NewMove(
+					PushMove(history, oldValue, NewMove(
 						(u8)cursor->gridPos.x,
 						(u8)cursor->gridPos.y,
 						oldValue,
 						false,
-						true
+						true,
+						false
 					));
 					boardChanged = true;
 				}
@@ -233,7 +264,7 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 	}
 	
 	// +==============================+
-	// |     Btn_B Holding Undos      |
+	// |     Holding Btn_B Undoes     |
 	// +==============================+
 	u32 holdTime = UNDO_BTN_HOLD_TIME;
 	if (TimeSince(input->btnStates[Btn_B].lastTransitionTime) >= UNDO_BTN_HOLD_TIME + UNDO_BTN_FIRST_REPEAT_TIME) { holdTime = UNDO_BTN_REPEAT_TIME; }
@@ -251,9 +282,18 @@ bool UpdateCursor(Cursor_t* cursor, Board_t* board, MoveList_t* history)
 				(u32)prevMove.x, (u32)prevMove.y
 			);
 			UndoMove(&game->board, prevMove);
+			CursorAddUndoAnim(cursor, NewVec2i(prevMove.x, prevMove.y));
+			game->undoIndex++;
+			// Silently undo any "autoInserted" moves that the player doesn't know about, that happened before the prevMove
+			while (game->history.numMoves > game->undoIndex && game->history.moves[game->undoIndex].autoInserted)
+			{
+				Move_t autoMove = game->history.moves[game->undoIndex];
+				UndoMove(&game->board, autoMove);
+				CursorAddUndoAnim(cursor, NewVec2i(autoMove.x, autoMove.y));
+				game->undoIndex++;
+			}
 			game->screenIsDirty = true;
 			boardChanged = true;
-			game->undoIndex++;
 		}
 	}
 	
@@ -287,6 +327,9 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 		}
 	}
 	
+	// +==============================+
+	// |     Render Notes Cursor      |
+	// +==============================+
 	if (cursor->makingNotes)
 	{
 		v2i noteSize = NewVec2i(selectedCell->mainRec.width / 3, selectedCell->mainRec.height / 3);
@@ -316,6 +359,9 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 			PdDrawRecOutline(noteRec, 1, false, kColorBlack);
 		}
 	}
+	// +==============================+
+	// |      Render Main Cursor      |
+	// +==============================+
 	else
 	{
 		reci cursorRec = selectedCell->innerRec;
@@ -346,5 +392,32 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 		LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
 		PdDrawRec(cursorRec, kColorBlack);
 		PdSetDrawMode(oldDrawMode);
+	}
+	
+	// +==============================+
+	// |      Render Undo Anims       |
+	// +==============================+
+	for (u32 uIndex = 0; uIndex < CURSOR_MAX_UNDO_ANIMS; uIndex++)
+	{
+		UndoAnim_t* undoAnim = &cursor->undoAnims[uIndex];
+		if (undoAnim->animProgress > 0.0f)
+		{
+			Cell_t* cell = GetCell(board, undoAnim->gridPos);
+			NotNull(cell);
+			reci drawRec = NewReci(
+				cell->innerRec.x + cell->innerRec.width/2 - game->undoAnimSheet.frameSize.width/2,
+				cell->innerRec.y + cell->innerRec.height/2 - game->undoAnimSheet.frameSize.height/2,
+				game->undoAnimSheet.frameSize
+			);
+			i32 frameIndex = (i32)LerpR32(0, (r32)game->undoAnimSheet.numFramesX, 1 - undoAnim->animProgress);
+			if (frameIndex >= game->undoAnimSheet.numFramesX) { frameIndex = game->undoAnimSheet.numFramesX-1; }
+			v2i animFrame = NewVec2i(frameIndex, 0);
+			reci oldClipRec = PdAddClipRec(cell->innerRec);
+			// LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeXOR);
+			PdDrawSheetFrame(game->undoAnimSheet, animFrame, drawRec);
+			// PdDrawRec(drawRec, kColorBlack);
+			// PdSetDrawMode(oldDrawMode);
+			PdSetClipRec(oldClipRec);
+		}
 	}
 }

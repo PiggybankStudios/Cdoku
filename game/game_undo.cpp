@@ -14,7 +14,7 @@ void InitMoveList(MoveList_t* list)
 	//TODO: Anything to initialize here that's non-zero?
 }
 
-void PushMove(MoveList_t* list, Move_t move)
+void PushMove(MoveList_t* list, u8 oldNumber, Move_t move)
 {
 	NotNull(list);
 	
@@ -27,6 +27,16 @@ void PushMove(MoveList_t* list, Move_t move)
 			list->prevMoveTime = ProgramTime;
 			return;
 		}
+	}
+	
+	if (!move.isNote && !move.isClear && move.value != 0 && oldNumber != 0)
+	{
+		// In order for our undo system to work correctly, we need to store the
+		// oldNumber for the cell, if you are changing a cell from some non-zero
+		// number to another. But the Move_t structure doesn't have space for two
+		// numbers, so we have to push an extra clear move in this scenario and
+		// then a regular move on top of it
+		PushMove(list, oldNumber, NewMove(move.x, move.y, oldNumber, false, true, true));
 	}
 	
 	for (u8 mIndex = MAX_NUM_UNDOS-1; mIndex > 0; mIndex--)

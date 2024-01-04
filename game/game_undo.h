@@ -17,12 +17,13 @@ union Move_t
 		u8 y:4;
 		u8 isNote:1;
 		u8 isClear:1;
-		u8 unused1:2;
+		u8 autoInserted:1;
+		u8 unused1:1;
 	};
 	struct
 	{
-		u16 mask:14;
-		u8 unused2:2;
+		u16 mask:15;
+		u8 unused2:1;
 	};
 };
 
@@ -33,7 +34,7 @@ struct MoveList_t
 	Move_t moves[MAX_NUM_UNDOS];
 };
 
-inline Move_t NewMove(u8 x, u8 y, u8 value, bool isNote, bool isClear)
+inline Move_t NewMove(u8 x, u8 y, u8 value, bool isNote, bool isClear, bool autoInserted)
 {
 	Move_t result = {};
 	result.value = value;
@@ -41,6 +42,7 @@ inline Move_t NewMove(u8 x, u8 y, u8 value, bool isNote, bool isClear)
 	result.y = y;
 	result.isNote = isNote;
 	result.isClear = isClear;
+	result.autoInserted = autoInserted;
 	return result;
 }
 inline Move_t NewMove(u16 wordValue)

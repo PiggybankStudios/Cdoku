@@ -101,6 +101,9 @@ void StartAppState_Game(bool initialize, AppState_t prevState, MyStr_t transitio
 		game->notesSheet = LoadSpriteSheet(NewStr("Resources/Sheets/numbers_small"), 3);
 		Assert(game->notesSheet.isValid);
 		
+		game->undoAnimSheet = LoadSpriteSheet(NewStr("Resources/Sheets/undo_anim"), 7);
+		Assert(game->undoAnimSheet.isValid);
+		
 		game->backgroundTexture = LoadTexture(NewStr("Resources/Textures/background"));
 		Assert(game->backgroundTexture.isValid);
 		
@@ -295,6 +298,19 @@ void RenderAppState_Game(bool isOnTop)
 		}
 		
 		// +==============================+
+		// |         Render Board         |
+		// +==============================+
+		RenderBoard(&game->board, &game->cursor, game->completed);
+		
+		// +==============================+
+		// |        Render Cursor         |
+		// +==============================+
+		if (!game->completed)
+		{
+			RenderCursor(&game->cursor, &game->board);
+		}
+		
+		// +==============================+
 		// |      Render Status Bar       |
 		// +==============================+
 		{
@@ -317,19 +333,31 @@ void RenderAppState_Game(bool isOnTop)
 			PdDrawText(currentLevelName, currentLevelNameDrawPos);
 			
 			PdSetDrawMode(kDrawModeCopy);
-		}
-		
-		// +==============================+
-		// |         Render Board         |
-		// +==============================+
-		RenderBoard(&game->board, &game->cursor, game->completed);
-		
-		// +==============================+
-		// |        Render Cursor         |
-		// +==============================+
-		if (!game->completed)
-		{
-			RenderCursor(&game->cursor, &game->board);
+			
+			v2i promptPos = NewVec2i(statusRec.x + BTN_PROMPT_SPACING, statusRec.y);
+			v2i textOffset = NewVec2i(0, statusRec.height/2 - pig->debugFont.lineHeight/2);
+			
+			#define DRAW_BTN_PROMPT(frame, text) do                                                              \
+			{                                                                                                    \
+				PdDrawSheetFrame(gl->btnPromptsSheet, frame, NewReci(promptPos, gl->btnPromptsSheet.frameSize)); \
+				promptPos.x += gl->btnPromptsSheet.frameSize.width + BTN_PROMPT_TEXT_SPACING;                    \
+				PdSetDrawMode(kDrawModeNXOR);                                                                    \
+				PdDrawText(text, promptPos + textOffset);                                                        \
+				PdSetDrawMode(kDrawModeCopy);                                                                    \
+				promptPos.x += MeasureText(pig->debugFont.font, NewStr(text)).width;                             \
+				promptPos.x += BTN_PROMPT_SPACING;                                                               \
+			} while(0)
+			
+			if (!game->completed)
+			{
+				DRAW_BTN_PROMPT(NewVec2i(0, 0), "Place");
+				DRAW_BTN_PROMPT(NewVec2i(1, 0), "Notes");
+				DRAW_BTN_PROMPT(NewVec2i(1, 0), "(Hold) Undo");
+			}
+			else
+			{
+				DRAW_BTN_PROMPT(NewVec2i(1, 0), "Main Menu");
+			}
 		}
 		
 		// +==============================+

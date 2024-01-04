@@ -34,14 +34,17 @@ AppState_t InitGame()
 	ClearPointer(gl);
 	gl->initialized = true;
 	
-	gl->highlightDither = LoadTexture(NewStr("Resources/Textures/dither1"));
+	gl->highlightDither = LoadTexture(NewStr("Resources/Textures/highlight_dither"));
 	Assert(gl->highlightDither.isValid);
 	
-	gl->errorDither = LoadTexture(NewStr("Resources/Textures/dither2"));
+	gl->errorDither = LoadTexture(NewStr("Resources/Textures/error_dither"));
 	Assert(gl->errorDither.isValid);
 	
-	gl->noteDither = LoadTexture(NewStr("Resources/Textures/dither3"));
+	gl->noteDither = LoadTexture(NewStr("Resources/Textures/note_dither"));
 	Assert(gl->noteDither.isValid);
+	
+	gl->btnPromptsSheet = LoadSpriteSheet(NewStr("Resources/Sheets/btn_prompts"), 8);
+	Assert(gl->btnPromptsSheet.isValid);
 	
 	pd->display->setRefreshRate((r32)REFRESH_RATE);
 	

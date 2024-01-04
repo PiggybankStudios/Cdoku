@@ -23,12 +23,14 @@ struct GameState_t
 	
 	SpriteSheet_t numbersSheet;
 	SpriteSheet_t notesSheet;
+	SpriteSheet_t undoAnimSheet;
 	Texture_t backgroundTexture;
 	
 	Board_t board;
 	Cursor_t cursor;
 	u8 undoIndex;
 	MoveList_t history;
+	
 	
 	bool screenIsDirty;
 	bool nextUpdateIsDirty;
