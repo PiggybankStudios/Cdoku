@@ -12,9 +12,18 @@ Description:
 
 #define BUILD_FOR_DEVICE     0
 #define BUILD_FOR_SIMULATOR  1
+#define DEBUG_BUILD          1
 
 #if !BUILDING_ON_WINDOWS && !BUILDING_ON_OSX
 #error This build script only works on Windows and MacOS
+#endif
+
+#if DEBUG_BUILD
+#define IF_DEBUG(...)   __VA_ARGS__
+#define IF_RELEASE(...) //nothing
+#else
+#define IF_DEBUG(...)   //nothing
+#define IF_RELEASE(...) __VA_ARGS__
 #endif
 
 int main(int argc, char* argv[])
@@ -28,18 +37,27 @@ int main(int argc, char* argv[])
 	
 	CliArgs commonCompilerFlags = EMPTY;
 	CliArgs commonLinkerFlags = EMPTY;
+	
+	AddTaggedArg(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_NO_LOGO);
 	AddTaggedArg(&commonCompilerFlags, T_MSVC_CL, CL_FULL_FILE_PATHS);
 	AddTaggedArg(&commonCompilerFlags, T_CLANG,   CLANG_FULL_FILE_PATHS);
+	
+	// AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_WARNING_LEVEL, "3");
+	// AddTaggedArg(&commonCompilerFlags,   T_MSVC_CL T_SIMULATOR, CL_NO_WARNINGS_AS_ERRORS);
+	
+	AddTaggedArg(&commonCompilerFlags,   T_MSVC_CL T_SIMULATOR T_DEBUG_BUILD,   CL_STD_LIB_DYNAMIC_DBG);
+	AddTaggedArg(&commonCompilerFlags,   T_MSVC_CL T_SIMULATOR T_RELEASE_BUILD, CL_STD_LIB_DYNAMIC);
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR T_DEBUG_BUILD,   CL_OPTIMIZATION_LEVEL, "d");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR T_RELEASE_BUILD, CL_OPTIMIZATION_LEVEL, "2");
+	AddTaggedArg(&commonCompilerFlags,   T_MSVC_CL T_SIMULATOR T_DEBUG_BUILD, CL_DEBUG_INFO);
+	
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/game");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/game");
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/lib");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/lib");
-	// FillPigCoreFlags(&commonCompilerFlags, &commonLinkerFlags, StrLit("[ROOT]/core"));
-	FillPlaydateFlags(&commonCompilerFlags, &commonLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
-	// IF_WINDOWS(AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL,  CL_DEFINE,    "WINDOWS_COMPILATION"));
-	// IF_WINDOWS(AddTaggedArgNt(&commonCompilerFlags, T_CLANG,    CLANG_DEFINE, "WINDOWS_COMPILATION"));
-	// IF_OSX(AddTaggedArgNt(&commonCompilerFlags,     T_MSVC_CL,  CL_DEFINE,    "OSX_COMPILATION"));
-	// IF_OSX(AddTaggedArgNt(&commonCompilerFlags,     T_CLANG,    CLANG_DEFINE, "OSX_COMPILATION"));
+	AddTaggedArgStr(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_INCLUDE_DIR,    playdateSdkDir_C_API);
+	AddTaggedArgStr(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_INCLUDE_DIR, playdateSdkDir_C_API);
+	
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL,             CL_DEFINE,    "PROJECT_NAME=\"C-doku\"");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,               CLANG_DEFINE, "PROJECT_NAME=\"C-doku\"");
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL,             CL_DEFINE,    "PROJECT_NAME_SAFE=\"Cdoku\"");
@@ -52,9 +70,19 @@ int main(int argc, char* argv[])
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_DEFINE,    "PLAYDATE_SIMULATOR");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_DEFINE, "PLAYDATE_SIMULATOR");
 	
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_DEFINE,    "TARGET_SIMULATOR=1");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_DEFINE, "TARGET_SIMULATOR=1");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_DEFINE,    "TARGET_EXTENSION=1");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_DEFINE, "TARGET_EXTENSION=1");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_DEFINE,    "__HEAP_SIZE=8388208");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_DEFINE, "__HEAP_SIZE=8388208");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL T_SIMULATOR, CL_DEFINE,    "__STACK_SIZE=61800");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG   T_SIMULATOR, CLANG_DEFINE, "__STACK_SIZE=61800");
+	
 	StrArray commonTags = EMPTY;
 	AddTag(&commonTags, T_LANG_CPP);
 	AddTag(&commonTags, T_PLAYDATE);
+	IF_DEBUG(AddTag(&commonTags, T_DEBUG_BUILD));
 	IF_WINDOWS(AddTag(&commonTags, T_WINDOWS));
 	IF_OSX(AddTag(&commonTags, T_OSX));
 	
