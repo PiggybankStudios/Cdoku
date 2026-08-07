@@ -17,13 +17,9 @@ Description:
 #error This build script only works on Windows and MacOS
 #endif
 
-//TODO: Download PigEngine
-//TODO: Download GyLib
-//TODO: Download Stb
-
 int main(int argc, char* argv[])
 {
-	PigBuildDebugMode = true;
+	PigBuildDebugMode = false;
 	RecompileIfNeeded(StrArray_Empty);
 	IF_WINDOWS(bool isMsvcInitialized = WasMsvcDevBatchRun());
 	
@@ -36,6 +32,8 @@ int main(int argc, char* argv[])
 	AddTaggedArg(&commonCompilerFlags, T_CLANG,   CLANG_FULL_FILE_PATHS);
 	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/game");
 	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/game");
+	AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL, CL_INCLUDE_DIR,    "[ROOT]/lib");
+	AddTaggedArgNt(&commonCompilerFlags, T_CLANG,   CLANG_INCLUDE_DIR, "[ROOT]/lib");
 	// FillPigCoreFlags(&commonCompilerFlags, &commonLinkerFlags, StrLit("[ROOT]/core"));
 	FillPlaydateFlags(&commonCompilerFlags, &commonLinkerFlags, playdateSdkDir, playdateSdkDir_C_API);
 	// IF_WINDOWS(AddTaggedArgNt(&commonCompilerFlags, T_MSVC_CL,  CL_DEFINE,    "WINDOWS_COMPILATION"));
@@ -94,7 +92,7 @@ int main(int argc, char* argv[])
 			WriteLine("[Compiling for OSX Simulator...]");
 			CliArgs args = EMPTY;
 			AddArg(&args, CLANG_COMPILE);
-			AddArgNt(&args, CLI_QUOTED_ARG, "[ROOT]/engine/platform/playdate/pig_main.cpp");
+			AddArgNt(&args, CLI_QUOTED_ARG, "[ROOT]/lib/engine/pig_main.cpp");
 			AddArgNt(&args, CLANG_OUTPUT_FILE, "sim_pig_main.o");
 			AddArgList(&args, &commonCompilerFlags);
 			
@@ -143,7 +141,7 @@ int main(int argc, char* argv[])
 		
 		WriteLine("[Packaging game...]");
 		CliArgs args = EMPTY;
-		// AddArg(&args, "-q"); //Quiet mode, suppress non-error output
+		AddArg(&args, "-q"); //Quiet mode, suppress non-error output (otherwise it prints the name of every single .txt file in our resources)
 		AddArgStr(&args, "-sdkpath \"[VAL]\"", playdateSdkDir);
 		AddArgNt(&args, CLI_QUOTED_ARG, "[ROOT]/data");
 		AddArgNt(&args, CLI_QUOTED_ARG, "Cdoku.pdx");
