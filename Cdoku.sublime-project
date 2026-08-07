@@ -15,7 +15,7 @@
 		},
 		{
 			"name": "PigEngine (Playdate)",
-			"path": "engine/platform/playdate",
+			"path": "lib/engine",
 		},
 		{
 			"name": "GyLib",
