@@ -3,8 +3,14 @@ build/*
 !build/build.bat
 lib/include/
 ~lib/include/README.md
-engine/
+# engine/
 data/Resources/Raw
 RawResources/
 data/pdex.elf
 data/pdex.dll
+data/pdex.dylib
+engine/
+gylib/
+pig_build/
+stb/
+.DS_Store

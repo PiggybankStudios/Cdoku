@@ -325,6 +325,7 @@ void RenderCursor(Cursor_t* cursor, Board_t* board)
 				case Dir2_Right: drawRec = ReciExpandLeft(drawRec,  -RoundR32i((r32)drawRec.width  * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateY(drawRec, RoundR32i(((r32)drawRec.height/2) * (1-prevPos->animProgress))); break;
 				case Dir2_Up:    drawRec = ReciExpandDown(drawRec,  -RoundR32i((r32)drawRec.height * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateX(drawRec, RoundR32i(((r32)drawRec.width/2) * (1-prevPos->animProgress))); break;
 				case Dir2_Down:  drawRec = ReciExpandUp(drawRec,    -RoundR32i((r32)drawRec.height * EaseCubicIn(1-prevPos->animProgress))); drawRec = ReciDeflateX(drawRec, RoundR32i(((r32)drawRec.width/2) * (1-prevPos->animProgress))); break;
+				default: Assert(false); break;
 			}
 			LCDBitmapDrawMode oldDrawMode = PdSetDrawMode(kDrawModeNXOR);
 			PdDrawRec(drawRec, kColorBlack);

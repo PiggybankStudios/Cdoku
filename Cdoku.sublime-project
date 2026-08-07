@@ -10,15 +10,42 @@
 			],
 		},
 		{
+			"name": "PigBuild",
+			"path": "../pig_build/src",
+		},
+		{
 			"name": "PigEngine (Playdate)",
 			"path": "engine/platform/playdate",
 		},
 		{
 			"name": "GyLib",
-			"path": "lib/include/gylib",
+			"path": "gylib",
 		},
 		{
+			"name": "Playdate SDK (Windows)",
 			"path": "F:\\Programs\\PlaydateSDK",
+			"folder_exclude_patterns":
+			[
+				".sentry-native",
+				"bin",
+				"Designing for Playdate",
+				"Disk",
+				"Inside Playdate",
+				"PlaydateSDK.docset",
+				"resources",
+				"C_API/buildsupport",
+				"C_API/Examples",
+				"CoreLibs/assets",
+			],
+			"file_exclude_patterns":
+			[
+				"*.html",
+				"*.css",
+			],
+		},
+		{
+			"name": "Playdate SDK (OSX)",
+			"path": "/Users/robbitay/Developer/PlaydateSDK",
 			"folder_exclude_patterns":
 			[
 				".sentry-native",
